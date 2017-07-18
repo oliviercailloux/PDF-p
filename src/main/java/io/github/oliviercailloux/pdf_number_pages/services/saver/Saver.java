@@ -21,7 +21,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
-import io.github.oliviercailloux.pdf_number_pages.events.AutoSaveChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.FinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OverwriteChanged;
@@ -29,7 +28,7 @@ import io.github.oliviercailloux.pdf_number_pages.events.SaveEvent;
 import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
 import io.github.oliviercailloux.pdf_number_pages.gui.InputOutputComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
-import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 
 /**
  * Controls a saver thread: whenever a job is in the queue, the saver thread
@@ -50,10 +49,16 @@ public class Saver {
 	private final ListeningExecutorService executor = MoreExecutors
 			.listeningDecorator(Executors.newSingleThreadExecutor());
 
+	private LabelRangesByIndex labels;
+
 	/**
 	 * Not <code>null</code>, not empty.
 	 */
 	private Path outputPath;
+
+	private boolean overwrite;
+
+	private Reader reader;
 
 	private ListenableFuture<Void> submittedJob;
 
@@ -65,16 +70,17 @@ public class Saver {
 		submittedJob = null;
 		lastSaveJobResult = Optional.empty();
 		outputPath = Paths.get(System.getProperty("user.home"), "out.pdf");
-	}
-
-	@Subscribe
-	public void autoSaveChanged(@SuppressWarnings("unused") AutoSaveChanged event) {
-		savePerhaps();
+		labels = null;
+		overwrite = false;
 	}
 
 	public void close() {
 		checkState(submittedJob == null || submittedJob.isDone());
 		executor.shutdown();
+	}
+
+	public LabelRangesByIndex getLabels() {
+		return labels;
 	}
 
 	public Optional<FinishedEvent> getLastFinishedJobResult() {
@@ -95,19 +101,12 @@ public class Saver {
 		return outputPath;
 	}
 
-	@Subscribe
-	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
-		savePerhaps();
+	public boolean getOverwrite() {
+		return overwrite;
 	}
 
-	@Subscribe
-	public void outputPathChanged(@SuppressWarnings("unused") OutputPathChanged event) {
-		savePerhaps();
-	}
-
-	@Subscribe
-	public void overwriteChanged(@SuppressWarnings("unused") OverwriteChanged event) {
-		savePerhaps();
+	public Reader getReader() {
+		return reader;
 	}
 
 	public void register(Object listener) {
@@ -115,17 +114,15 @@ public class Saver {
 	}
 
 	public void save() {
-		checkState(Display.getCurrent() != null);
 		if (submittedJob != null) {
 			submittedJob.cancel(true);
 		}
 		LOGGER.debug("Attempting save.");
-		final LabelRangesByIndex labelRangesByIndex = controller.getLabelRangesByIndex();
-		assert !labelRangesByIndex.isEmpty();
+		assert !labels.isEmpty();
 		final InputOutputComponent inputOutputComponent = controller.getInputOutputComponent();
-		final Path inputPath = inputOutputComponent.getInputPath();
+		final Path inputPath = reader.getInputPath();
 		inputOutputComponent.setChangesEnabled(false);
-		final SaveJob saveJob = new SaveJob(labelRangesByIndex, inputPath, outputPath, controller.getOverwrite());
+		final SaveJob saveJob = new SaveJob(labels, inputPath, outputPath, overwrite);
 		submittedJob = executor.submit(new SaverRunnable(saveJob));
 		Futures.addCallback(submittedJob, new FutureCallback<Void>() {
 
@@ -160,15 +157,22 @@ public class Saver {
 		this.controller = requireNonNull(controller);
 	}
 
+	public void setLabels(LabelRangesByIndex labels) {
+		this.labels = requireNonNull(labels);
+	}
+
 	public void setOutputPath(Path outputPath) {
 		this.outputPath = requireNonNull(outputPath);
 		LOGGER.debug("Posting output path changed event.");
 		eventBus.post(new OutputPathChanged(outputPath));
 	}
 
-	private void savePerhaps() {
-		if (!controller.getLabelRangesByIndex().isEmpty() && controller.getAutoSave()) {
-			save();
-		}
+	public void setOverwrite(boolean overwrite) {
+		this.overwrite = overwrite;
+		eventBus.post(new OverwriteChanged(overwrite));
+	}
+
+	public void setReader(Reader reader) {
+		this.reader = requireNonNull(reader);
 	}
 }

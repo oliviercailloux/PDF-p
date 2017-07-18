@@ -24,6 +24,7 @@ import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
+import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
 /**
@@ -34,7 +35,6 @@ import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
  *
  */
 public class InputOutputComponent {
-
 	@SuppressWarnings("unused")
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputOutputComponent.class);
 
@@ -46,10 +46,7 @@ public class InputOutputComponent {
 
 	private final EventBus eventBus = new EventBus(InputOutputComponent.class.getCanonicalName());
 
-	/**
-	 * Not <code>null</code>, not empty.
-	 */
-	private Path inputPath;
+	private Reader reader;
 
 	private Saver saver;
 
@@ -61,7 +58,6 @@ public class InputOutputComponent {
 
 	public InputOutputComponent(Saver saver) {
 		this.saver = requireNonNull(saver);
-		inputPath = Paths.get(System.getProperty("user.home"), "in.pdf");
 		enabled = true;
 		sourceButton = null;
 		destButton = null;
@@ -74,7 +70,7 @@ public class InputOutputComponent {
 		fileDialog.setFilterExtensions(new String[] { "*.pdf" });
 		final String toOpen = fileDialog.open();
 		if (toOpen != null) {
-			setInputPath(Paths.get(toOpen));
+			reader.setInputPath(Paths.get(toOpen));
 		}
 	}
 
@@ -88,8 +84,12 @@ public class InputOutputComponent {
 		}
 	}
 
-	public Path getInputPath() {
-		return inputPath;
+	public Reader getReader() {
+		return reader;
+	}
+
+	public Saver getSaver() {
+		return saver;
 	}
 
 	public void init(Composite parent) {
@@ -102,7 +102,7 @@ public class InputOutputComponent {
 		sourceButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
 		sourceText = new Label(composite, SWT.NONE);
 		sourceText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		setInputText();
+		setInputText(reader.getInputPath());
 		sourceButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -117,7 +117,7 @@ public class InputOutputComponent {
 		destButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
 		destText = new Label(composite, SWT.NONE);
 		destText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		setOutputText();
+		setOutputText(saver.getOutputPath());
 		destButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -128,9 +128,15 @@ public class InputOutputComponent {
 		});
 	}
 
+	public void inputPathChangedEvent(InputPathChanged event) {
+		Display.getCurrent().asyncExec(() -> {
+			setInputText(event.getInputPath());
+		});
+	}
+
 	@Subscribe
-	public void outputPathChangedEvent(@SuppressWarnings("unused") OutputPathChanged event) {
-		setOutputText();
+	public void outputPathChangedEvent(OutputPathChanged event) {
+		setOutputText(event.getOutputPath());
 	}
 
 	public void register(Object listener) {
@@ -146,13 +152,8 @@ public class InputOutputComponent {
 		destButton.setEnabled(this.enabled);
 	}
 
-	public void setInputPath(Path inputPath) {
-		this.inputPath = requireNonNull(inputPath);
-		Display.getCurrent().asyncExec(() -> {
-			setInputText();
-			LOGGER.info("Posting input path changed event.");
-			eventBus.post(new InputPathChanged(inputPath));
-		});
+	public void setReader(Reader reader) {
+		this.reader = requireNonNull(reader);
 	}
 
 	public void setSavedStatus(boolean saved) {
@@ -164,13 +165,17 @@ public class InputOutputComponent {
 		}
 	}
 
-	void setInputText() {
+	public void setSaver(Saver saver) {
+		this.saver = requireNonNull(saver);
+	}
+
+	void setInputText(Path inputPath) {
 		final String text = inputPath.toString();
 		sourceText.setText(text);
 	}
 
-	void setOutputText() {
-		final String text = saver.getOutputPath().toString();
+	void setOutputText(Path outputPath) {
+		final String text = outputPath.toString();
 		destText.setText(text);
 	}
 

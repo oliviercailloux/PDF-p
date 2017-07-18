@@ -26,8 +26,8 @@ import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OverwriteChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.ReadEvent;
-import io.github.oliviercailloux.pdf_number_pages.events.SaveEvent;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
 public class SaveOptionsComponent {
 
@@ -44,20 +44,22 @@ public class SaveOptionsComponent {
 
 	Button overwriteButton;
 
+	Saver saver;
+
 	public SaveOptionsComponent() {
 		label = null;
 		overwriteButton = null;
 		saveButton = null;
 		autoSaveButton = null;
+		saver = null;
 	}
 
-	public boolean getAutoSave() {
-		checkState(autoSaveButton != null);
-		return autoSaveButton.getSelection();
+	public void autoSaveChangedEvent(AutoSaveChanged event) {
+		autoSaveButton.setSelection(event.autoSave());
 	}
 
-	public boolean getOverwrite() {
-		return overwriteButton.getSelection();
+	public Saver getSaver() {
+		return saver;
 	}
 
 	public void init(Shell shell) {
@@ -84,7 +86,7 @@ public class SaveOptionsComponent {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				LOGGER.debug("Selected button save.");
-				eventBus.post(new SaveEvent());
+				saver.save();
 			}
 		});
 
@@ -94,7 +96,7 @@ public class SaveOptionsComponent {
 		overwriteButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				eventBus.post(new OverwriteChanged(overwriteButton.getSelection()));
+				saver.setOverwrite(overwriteButton.getSelection());
 			}
 		});
 		overwriteButton.setSelection(false);
@@ -124,6 +126,12 @@ public class SaveOptionsComponent {
 		setSaveError("");
 	}
 
+	public void overwriteChangedEvent(OverwriteChanged event) {
+		Display.getCurrent().asyncExec(() -> {
+			overwriteButton.setEnabled(event.overwrite());
+		});
+	}
+
 	@Subscribe
 	public void readEvent(ReadEvent event) {
 		setReadError(event.getErrorMessage());
@@ -138,19 +146,13 @@ public class SaveOptionsComponent {
 		setSaveError(event.getErrorMessage());
 	}
 
-	public void setAutoSave(boolean enabled) {
-		autoSaveButton.setSelection(enabled);
-		eventBus.post(new AutoSaveChanged(autoSaveButton.getSelection()));
-	}
-
-	public void setOverwrite(boolean overwrite) {
-		overwriteButton.setSelection(overwrite);
-		eventBus.post(new OverwriteChanged(overwriteButton.getSelection()));
-	}
-
 	public void setSaveButtonEnabled(boolean enabled) {
 		checkState(saveButton != null);
 		saveButton.setEnabled(enabled);
+	}
+
+	public void setSaver(Saver saver) {
+		this.saver = requireNonNull(saver);
 	}
 
 	/**

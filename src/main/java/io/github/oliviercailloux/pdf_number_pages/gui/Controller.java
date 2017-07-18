@@ -35,6 +35,8 @@ import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelOperation;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
 import io.github.oliviercailloux.pdf_number_pages.services.LabelRangesOperator;
+import io.github.oliviercailloux.pdf_number_pages.services.Reader;
+import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaveJob;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
@@ -54,6 +56,8 @@ public class Controller {
 		app.proceed();
 	}
 
+	private AutoSaver autoSaver;
+
 	private Display display;
 
 	private final InputOutputComponent inputOutputComponent;
@@ -63,6 +67,8 @@ public class Controller {
 	private final LabelRangesComponent labelRangesComponent;
 
 	private final LabelRangesOperator labelRangesOperator = new LabelRangesOperator();
+
+	private Reader reader;
 
 	private final SaveOptionsComponent saveOptionsComponent;
 
@@ -75,11 +81,16 @@ public class Controller {
 	public Controller() {
 		labelRangesByIndex = new LabelRangesByIndex();
 		saver = new Saver();
+		autoSaver = new AutoSaver();
+		reader = new Reader();
+		autoSaver.setSaver(saver);
 		display = Display.getDefault();
 		labelRangesComponent = new LabelRangesComponent();
 		inputOutputComponent = new InputOutputComponent(saver);
 		saver.setController(this);
 		saveOptionsComponent = new SaveOptionsComponent();
+		saveOptionsComponent.setSaver(saver);
+
 		final Exitter exitter = new Exitter();
 		exitter.setController(this);
 
@@ -88,6 +99,8 @@ public class Controller {
 		register(saveOptionsComponent);
 		register(labelRangesComponent);
 		register(saver);
+		register(autoSaver);
+		register(reader);
 		register(exitter);
 	}
 
@@ -152,7 +165,7 @@ public class Controller {
 	}
 
 	public boolean getAutoSave() {
-		return saveOptionsComponent.getAutoSave();
+		return autoSaver.autoSaves();
 	}
 
 	public InputOutputComponent getInputOutputComponent() {
@@ -161,10 +174,6 @@ public class Controller {
 
 	public LabelRangesByIndex getLabelRangesByIndex() {
 		return labelRangesByIndex;
-	}
-
-	public boolean getOverwrite() {
-		return saveOptionsComponent.getOverwrite();
 	}
 
 	public Saver getSaver() {
@@ -215,7 +224,7 @@ public class Controller {
 		errorMessage = labelRangesOperator.getErrorMessage();
 		succeeded = labelRangesOperator.succeeded();
 
-		assert Display.findDisplay(Thread.currentThread()) != null;
+		assert Display.getCurrent() != null;
 		eventBus.post(new ReadEvent(succeeded, errorMessage));
 		eventBus.post(new ModelChanged(ModelOperation.ALL));
 	}
@@ -242,11 +251,8 @@ public class Controller {
 	public void proceed() {
 		LOGGER.info("Start init.");
 		initGui();
-		inputOutputComponent
-				.setInputPath(Paths.get("/home/olivier/Local/Biblio - backup/Roman - Advanced Linear Algebra.pdf"));
-		display.asyncExec(() -> {
-			saveOptionsComponent.setOverwrite(true);
-		});
+		reader.setInputPath(Paths.get("/home/olivier/Local/Biblio - backup/Roman - Advanced Linear Algebra.pdf"));
+		saver.setOverwrite(true);
 		LOGGER.info("Finished init.");
 		fireView();
 	}
@@ -256,6 +262,8 @@ public class Controller {
 		inputOutputComponent.register(listener);
 		saveOptionsComponent.register(listener);
 		saver.register(listener);
+		autoSaver.register(listener);
+		reader.register(listener);
 		labelRangesByIndex.register(listener);
 	}
 
@@ -278,7 +286,7 @@ public class Controller {
 			LOGGER.debug("Testing equality.");
 			final boolean eqModel = job.getLabelRangesByIndex().equals(labelRangesByIndex);
 			LOGGER.debug("Tested equality.");
-			final boolean eqInp = job.getInputPath().equals(inputOutputComponent.getInputPath());
+			final boolean eqInp = job.getInputPath().equals(reader.getInputPath());
 			final boolean eqOutp = job.getOutputPath().equals(saver.getOutputPath());
 			final boolean noErr = event.getErrorMessage().isEmpty();
 			inputOutputComponent.setSavedStatus(eqModel && eqInp && eqOutp && noErr);
