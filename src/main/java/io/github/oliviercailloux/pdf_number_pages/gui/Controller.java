@@ -74,10 +74,10 @@ public class Controller {
 
 	public Controller() {
 		labelRangesByIndex = new LabelRangesByIndex();
+		saver = new Saver();
 		display = Display.getDefault();
 		labelRangesComponent = new LabelRangesComponent();
-		inputOutputComponent = new InputOutputComponent();
-		saver = new Saver();
+		inputOutputComponent = new InputOutputComponent(saver);
 		saver.setController(this);
 		saveOptionsComponent = new SaveOptionsComponent();
 		final Exitter exitter = new Exitter();
@@ -279,7 +279,7 @@ public class Controller {
 			final boolean eqModel = job.getLabelRangesByIndex().equals(labelRangesByIndex);
 			LOGGER.debug("Tested equality.");
 			final boolean eqInp = job.getInputPath().equals(inputOutputComponent.getInputPath());
-			final boolean eqOutp = job.getOutputPath().equals(inputOutputComponent.getOutputPath());
+			final boolean eqOutp = job.getOutputPath().equals(saver.getOutputPath());
 			final boolean noErr = event.getErrorMessage().isEmpty();
 			inputOutputComponent.setSavedStatus(eqModel && eqInp && eqOutp && noErr);
 		}

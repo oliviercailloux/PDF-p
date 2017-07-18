@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -49,6 +50,11 @@ public class Saver {
 	private final ListeningExecutorService executor = MoreExecutors
 			.listeningDecorator(Executors.newSingleThreadExecutor());
 
+	/**
+	 * Not <code>null</code>, not empty.
+	 */
+	private Path outputPath;
+
 	private ListenableFuture<Void> submittedJob;
 
 	final EventBus eventBus = new EventBus(Saver.class.getCanonicalName());
@@ -58,6 +64,7 @@ public class Saver {
 	public Saver() {
 		submittedJob = null;
 		lastSaveJobResult = Optional.empty();
+		outputPath = Paths.get(System.getProperty("user.home"), "out.pdf");
 	}
 
 	@Subscribe
@@ -82,6 +89,10 @@ public class Saver {
 	 */
 	public Optional<Future<Void>> getLastJobResult() {
 		return Optional.ofNullable(submittedJob);
+	}
+
+	public Path getOutputPath() {
+		return outputPath;
 	}
 
 	@Subscribe
@@ -113,7 +124,6 @@ public class Saver {
 		assert !labelRangesByIndex.isEmpty();
 		final InputOutputComponent inputOutputComponent = controller.getInputOutputComponent();
 		final Path inputPath = inputOutputComponent.getInputPath();
-		final Path outputPath = inputOutputComponent.getOutputPath();
 		inputOutputComponent.setChangesEnabled(false);
 		final SaveJob saveJob = new SaveJob(labelRangesByIndex, inputPath, outputPath, controller.getOverwrite());
 		submittedJob = executor.submit(new SaverRunnable(saveJob));
@@ -148,6 +158,12 @@ public class Saver {
 
 	public void setController(Controller controller) {
 		this.controller = requireNonNull(controller);
+	}
+
+	public void setOutputPath(Path outputPath) {
+		this.outputPath = requireNonNull(outputPath);
+		LOGGER.debug("Posting output path changed event.");
+		eventBus.post(new OutputPathChanged(outputPath));
 	}
 
 	private void savePerhaps() {

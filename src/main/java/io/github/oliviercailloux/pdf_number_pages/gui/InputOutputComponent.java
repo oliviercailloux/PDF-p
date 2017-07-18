@@ -20,9 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
+import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
 /**
  * The UI uses the terms source and dest, but the code rather uses input and
@@ -49,10 +51,7 @@ public class InputOutputComponent {
 	 */
 	private Path inputPath;
 
-	/**
-	 * Not <code>null</code>, not empty.
-	 */
-	private Path outputPath;
+	private Saver saver;
 
 	private Button sourceButton;
 
@@ -60,9 +59,9 @@ public class InputOutputComponent {
 
 	Label sourceText;
 
-	public InputOutputComponent() {
+	public InputOutputComponent(Saver saver) {
+		this.saver = requireNonNull(saver);
 		inputPath = Paths.get(System.getProperty("user.home"), "in.pdf");
-		outputPath = Paths.get(System.getProperty("user.home"), "out.pdf");
 		enabled = true;
 		sourceButton = null;
 		destButton = null;
@@ -85,16 +84,12 @@ public class InputOutputComponent {
 		fileDialog.setFilterExtensions(new String[] { "*.pdf" });
 		final String toOpen = fileDialog.open();
 		if (toOpen != null) {
-			setOutputPath(Paths.get(toOpen));
+			saver.setOutputPath(Paths.get(toOpen));
 		}
 	}
 
 	public Path getInputPath() {
 		return inputPath;
-	}
-
-	public Path getOutputPath() {
-		return outputPath;
 	}
 
 	public void init(Composite parent) {
@@ -133,6 +128,11 @@ public class InputOutputComponent {
 		});
 	}
 
+	@Subscribe
+	public void outputPathChangedEvent(@SuppressWarnings("unused") OutputPathChanged event) {
+		setOutputText();
+	}
+
 	public void register(Object listener) {
 		eventBus.register(requireNonNull(listener));
 	}
@@ -155,13 +155,6 @@ public class InputOutputComponent {
 		});
 	}
 
-	public void setOutputPath(Path outputPath) {
-		this.outputPath = requireNonNull(outputPath);
-		setOutputText();
-		LOGGER.debug("Posting output path changed event.");
-		eventBus.post(new OutputPathChanged(outputPath));
-	}
-
 	public void setSavedStatus(boolean saved) {
 		if (saved) {
 			destText.setForeground(null);
@@ -177,7 +170,7 @@ public class InputOutputComponent {
 	}
 
 	void setOutputText() {
-		final String text = outputPath.toString();
+		final String text = saver.getOutputPath().toString();
 		destText.setText(text);
 	}
 
