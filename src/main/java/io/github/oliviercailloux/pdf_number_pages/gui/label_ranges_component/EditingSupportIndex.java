@@ -1,10 +1,10 @@
-package io.github.oliviercailloux.pdf_number_pages.label_ranges_component;
+package io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component;
 
 import org.eclipse.jface.viewers.ColumnViewer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.oliviercailloux.pdf_number_pages.App;
+import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
 import io.github.oliviercailloux.swt_tools.IntEditingSupport;
 
 public class EditingSupportIndex extends IntEditingSupport<Integer> {
@@ -14,7 +14,7 @@ public class EditingSupportIndex extends IntEditingSupport<Integer> {
 
 	public EditingSupportIndex(ColumnViewer viewer) {
 		super(viewer, Integer.class);
-		setIntegerValidator(intValue -> App.getInstance().getLabelRangesByIndex().containsKey(intValue - 1)
+		setIntegerValidator(intValue -> Controller.getInstance().getLabelRangesByIndex().containsKey(intValue - 1)
 				? "Index must be unique." : null);
 	}
 
@@ -35,8 +35,8 @@ public class EditingSupportIndex extends IntEditingSupport<Integer> {
 		if (elementIndex.intValue() == intValue - 1) {
 			return;
 		}
-		final App app = App.getInstance();
-		app.move(elementIndex, intValue - 1);
+		final Controller app = Controller.getInstance();
+		app.getLabelRangesByIndex().move(elementIndex, intValue - 1);
 	}
 
 }

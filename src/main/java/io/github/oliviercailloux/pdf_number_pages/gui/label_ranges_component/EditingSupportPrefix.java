@@ -1,4 +1,4 @@
-package io.github.oliviercailloux.pdf_number_pages.label_ranges_component;
+package io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component;
 
 import org.eclipse.jface.viewers.ColumnViewer;
 import org.slf4j.Logger;
@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 
-import io.github.oliviercailloux.pdf_number_pages.App;
+import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
 import io.github.oliviercailloux.swt_tools.TextEditingSupport;
 
 public class EditingSupportPrefix extends TextEditingSupport<Integer> {
@@ -21,15 +21,15 @@ public class EditingSupportPrefix extends TextEditingSupport<Integer> {
 	@Override
 	public String getValueTyped(Integer elementIndex) {
 		assert elementIndex != null;
-		LOGGER.info("Getting value for: {}.", elementIndex);
-		return Strings.nullToEmpty(App.getInstance().getLabelRangesByIndex().get(elementIndex).getPrefix());
+		LOGGER.debug("Getting value for: {}.", elementIndex);
+		return Strings.nullToEmpty(Controller.getInstance().getLabelRangesByIndex().get(elementIndex).getPrefix());
 	}
 
 	@Override
 	public void setValueTyped(Integer elementIndex, String value) {
 		assert elementIndex != null;
-		final App app = App.getInstance();
-		app.setPrefix(elementIndex, value);
+		final Controller app = Controller.getInstance();
+		app.getLabelRangesByIndex().setPrefix(elementIndex, value);
 	}
 
 }

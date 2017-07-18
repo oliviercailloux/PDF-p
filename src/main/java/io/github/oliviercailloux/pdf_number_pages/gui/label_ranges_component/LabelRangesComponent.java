@@ -1,4 +1,4 @@
-package io.github.oliviercailloux.pdf_number_pages.label_ranges_component;
+package io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component;
 
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -14,16 +14,20 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.eventbus.Subscribe;
 
-import io.github.oliviercailloux.pdf_number_pages.App;
-import io.github.oliviercailloux.pdf_number_pages.JFace;
-import io.github.oliviercailloux.pdf_number_pages.RangeStyle;
+import io.github.oliviercailloux.pdf_number_pages.events.ReadEvent;
+import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
+import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.model.RangeStyle;
+import io.github.oliviercailloux.swt_tools.JFace;
 
 public class LabelRangesComponent {
-
 	private static final int COL_INDEX_IDX = 0;
 
 	private static final int COL_PREFIX_IDX = 1;
@@ -38,6 +42,9 @@ public class LabelRangesComponent {
 	private static final char DEL_KEY = 0x7F;
 
 	private static final char PLUS_KEY = 0x2B;
+
+	@SuppressWarnings("unused")
+	static final Logger LOGGER = LoggerFactory.getLogger(LabelRangesComponent.class);
 
 	private Table table;
 
@@ -66,31 +73,58 @@ public class LabelRangesComponent {
 		initViewer();
 	}
 
+	@Subscribe
+	public void modelChangedEvent(ModelChanged event) {
+		final int elementIndex = event.getElementIndex();
+		switch (event.getOp()) {
+		case ADD:
+			viewer.add(elementIndex);
+			break;
+		case REMOVE:
+			viewer.remove(elementIndex);
+			break;
+		case SET_PREFIX:
+			viewer.update(elementIndex, new String[] { COLUMN_NAMES.get(COL_PREFIX_IDX) });
+			break;
+		case SET_START:
+			viewer.update(elementIndex, new String[] { COLUMN_NAMES.get(COL_START_IDX) });
+			break;
+		case SET_STYLE:
+			viewer.update(elementIndex, new String[] { COLUMN_NAMES.get(COL_STYLE_IDX) });
+			break;
+		case ALL:
+			viewer.setInput(Controller.getInstance().getLabelRangesByIndex().keySet());
+			break;
+		default:
+			throw new IllegalStateException();
+		}
+	}
+
+	@Subscribe
+	public void readEvent(ReadEvent event) {
+		setKeyListenerEnabled(event.succeeded());
+	}
+
 	public void setKeyListenerEnabled(boolean enabled) {
 		if (enabled) {
+			/**
+			 * We have to remove it just in case it was already registered, to
+			 * avoid double registration.
+			 */
+			table.removeKeyListener(tableKeyListener);
 			table.addKeyListener(tableKeyListener);
 		} else {
 			table.removeKeyListener(tableKeyListener);
 		}
 	}
 
-	public void updatePrefix(int elementIndex) {
-		viewer.update(elementIndex, new String[] { COLUMN_NAMES.get(COL_PREFIX_IDX) });
-	}
-
-	public void updateStart(int elementIndex) {
-		viewer.update(elementIndex, new String[] { COLUMN_NAMES.get(COL_START_IDX) });
-	}
-
-	public void updateStyle(int elementIndex) {
-		viewer.update(elementIndex, new String[] { COLUMN_NAMES.get(COL_STYLE_IDX) });
-	}
-
 	private void initTable(Composite parent) {
 		final TableColumnLayout tableLayout = new TableColumnLayout(true);
 		tableComposite = new Composite(parent, SWT.NONE);
+		final GridData layoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		layoutData.heightHint = 300;
+		tableComposite.setLayoutData(layoutData);
 		tableComposite.setLayout(tableLayout);
-		tableComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		table = new Table(tableComposite, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
@@ -141,22 +175,24 @@ public class LabelRangesComponent {
 					for (Object o : sel.toList()) {
 						final int elementIndex = (Integer) o;
 						if (elementIndex == 0) {
-							App.getInstance().setPrefix(0, "");
-							App.getInstance().setStyle(0, RangeStyle.DECIMAL);
-							App.getInstance().setStart(0, 1);
+							Controller.getInstance().getLabelRangesByIndex().setPrefix(0, "");
+							Controller.getInstance().getLabelRangesByIndex().setStyle(0, RangeStyle.DECIMAL);
+							Controller.getInstance().getLabelRangesByIndex().setStart(0, 1);
 						} else {
-							App.getInstance().remove(elementIndex);
+							Controller.getInstance().getLabelRangesByIndex().removeExisting(elementIndex);
 						}
 					}
 					e.doit = false;
-				} else {
-					if (e.character == PLUS_KEY) {
-						App.getInstance().add();
+				} else if (e.character == PLUS_KEY) {
+					LOGGER.debug("Pressed plus.");
+					if (!Controller.getInstance().getLabelRangesByIndex().isEmpty()) {
+						Controller.getInstance().getLabelRangesByIndex().add();
 						e.doit = false;
 					}
 				}
 			}
 		};
+		table.addKeyListener(tableKeyListener);
 	}
 
 }

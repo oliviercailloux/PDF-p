@@ -1,10 +1,10 @@
-package io.github.oliviercailloux.pdf_number_pages.label_ranges_component;
+package io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component;
 
 import org.eclipse.jface.viewers.ColumnViewer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.oliviercailloux.pdf_number_pages.App;
+import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
 import io.github.oliviercailloux.swt_tools.IntEditingSupport;
 
 public class EditingSupportStart extends IntEditingSupport<Integer> {
@@ -19,15 +19,15 @@ public class EditingSupportStart extends IntEditingSupport<Integer> {
 	@Override
 	public int getIntValue(Integer elementIndex) {
 		assert elementIndex != null;
-		LOGGER.info("Getting value for: {}.", elementIndex);
-		return App.getInstance().getLabelRangesByIndex().get(elementIndex).getStart();
+		LOGGER.debug("Getting value for: {}.", elementIndex);
+		return Controller.getInstance().getLabelRangesByIndex().get(elementIndex).getStart();
 	}
 
 	@Override
 	public void setIntValue(Integer elementIndex, int value) {
 		assert elementIndex != null;
-		final App app = App.getInstance();
-		app.setStart(elementIndex, value);
+		final Controller app = Controller.getInstance();
+		app.getLabelRangesByIndex().setStart(elementIndex, value);
 	}
 
 }
