@@ -6,7 +6,7 @@ import com.google.common.base.MoreObjects;
 
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaveJob;
 
-public class FinishedEvent {
+public class SaverFinishedEvent {
 
 	private final String errorMessage;
 
@@ -16,7 +16,7 @@ public class FinishedEvent {
 	 * @param errorMessage
 	 *            empty string iff no error has occurred.
 	 */
-	public FinishedEvent(SaveJob saveJob, String errorMessage) {
+	public SaverFinishedEvent(SaveJob saveJob, String errorMessage) {
 		this.saveJob = requireNonNull(saveJob);
 		this.errorMessage = requireNonNull(errorMessage);
 	}

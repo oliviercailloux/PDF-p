@@ -21,12 +21,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
-import io.github.oliviercailloux.pdf_number_pages.events.FinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OverwriteChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.SaveEvent;
+import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
-import io.github.oliviercailloux.pdf_number_pages.gui.InputOutputComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 
@@ -49,7 +48,7 @@ public class Saver {
 	private final ListeningExecutorService executor = MoreExecutors
 			.listeningDecorator(Executors.newSingleThreadExecutor());
 
-	private LabelRangesByIndex labels;
+	private LabelRangesByIndex labelRangesByIndex;
 
 	/**
 	 * Not <code>null</code>, not empty.
@@ -64,13 +63,13 @@ public class Saver {
 
 	final EventBus eventBus = new EventBus(Saver.class.getCanonicalName());
 
-	Optional<FinishedEvent> lastSaveJobResult;
+	Optional<SaverFinishedEvent> lastSaveJobResult;
 
 	public Saver() {
 		submittedJob = null;
 		lastSaveJobResult = Optional.empty();
 		outputPath = Paths.get(System.getProperty("user.home"), "out.pdf");
-		labels = null;
+		labelRangesByIndex = null;
 		overwrite = false;
 	}
 
@@ -79,11 +78,11 @@ public class Saver {
 		executor.shutdown();
 	}
 
-	public LabelRangesByIndex getLabels() {
-		return labels;
+	public LabelRangesByIndex getLabelRangesByIndex() {
+		return labelRangesByIndex;
 	}
 
-	public Optional<FinishedEvent> getLastFinishedJobResult() {
+	public Optional<SaverFinishedEvent> getLastFinishedJobResult() {
 		return lastSaveJobResult;
 	}
 
@@ -118,11 +117,9 @@ public class Saver {
 			submittedJob.cancel(true);
 		}
 		LOGGER.debug("Attempting save.");
-		assert !labels.isEmpty();
-		final InputOutputComponent inputOutputComponent = controller.getInputOutputComponent();
+		assert !labelRangesByIndex.isEmpty();
 		final Path inputPath = reader.getInputPath();
-		inputOutputComponent.setChangesEnabled(false);
-		final SaveJob saveJob = new SaveJob(labels, inputPath, outputPath, overwrite);
+		final SaveJob saveJob = new SaveJob(labelRangesByIndex, inputPath, outputPath, overwrite);
 		submittedJob = executor.submit(new SaverRunnable(saveJob));
 		Futures.addCallback(submittedJob, new FutureCallback<Void>() {
 
@@ -130,7 +127,7 @@ public class Saver {
 			public void onFailure(Throwable t) {
 				LOGGER.error("Problem while saving.", t);
 				Display.getDefault().asyncExec(() -> {
-					final FinishedEvent event = new FinishedEvent(saveJob, t.getMessage());
+					final SaverFinishedEvent event = new SaverFinishedEvent(saveJob, t.getMessage());
 					LOGGER.debug("Saving new finished event: {}.", event);
 					lastSaveJobResult = Optional.of(event);
 					eventBus.post(event);
@@ -139,7 +136,7 @@ public class Saver {
 
 			@Override
 			public void onSuccess(Void result) {
-				final FinishedEvent event = new FinishedEvent(saveJob, "");
+				final SaverFinishedEvent event = new SaverFinishedEvent(saveJob, "");
 				LOGGER.debug("Saving new finished event: {}.", event);
 				lastSaveJobResult = Optional.of(event);
 				Display.getDefault().asyncExec(() -> eventBus.post(event));
@@ -157,8 +154,8 @@ public class Saver {
 		this.controller = requireNonNull(controller);
 	}
 
-	public void setLabels(LabelRangesByIndex labels) {
-		this.labels = requireNonNull(labels);
+	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
+		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
 	}
 
 	public void setOutputPath(Path outputPath) {

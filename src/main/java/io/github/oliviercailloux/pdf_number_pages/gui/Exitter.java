@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.Subscribe;
 
-import io.github.oliviercailloux.pdf_number_pages.events.FinishedEvent;
+import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.ShellClosedEvent;
 
 public class Exitter {
@@ -34,7 +34,7 @@ public class Exitter {
 	}
 
 	@Subscribe
-	public void saverHasFinishedEvent(FinishedEvent event) {
+	public void saverHasFinishedEvent(SaverFinishedEvent event) {
 		if (!waitingToClose) {
 			return;
 		}

@@ -8,6 +8,7 @@ import com.google.common.eventbus.Subscribe;
 import io.github.oliviercailloux.pdf_number_pages.events.AutoSaveChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OverwriteChanged;
+import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 
 /**
@@ -20,6 +21,8 @@ import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 public class AutoSaver {
 	private boolean autoSave;
 
+	private LabelRangesByIndex labelRangesByIndex;
+
 	private Saver saver;
 
 	final EventBus eventBus = new EventBus(AutoSaver.class.getCanonicalName());
@@ -31,6 +34,10 @@ public class AutoSaver {
 
 	public boolean autoSaves() {
 		return autoSave;
+	}
+
+	public LabelRangesByIndex getLabelRangesByIndex() {
+		return labelRangesByIndex;
 	}
 
 	public Saver getSaver() {
@@ -58,12 +65,18 @@ public class AutoSaver {
 
 	public void setAutoSave(boolean autoSave) {
 		this.autoSave = autoSave;
-		savePerhaps();
 		eventBus.post(new AutoSaveChanged(autoSave));
+		savePerhaps();
+	}
+
+	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
+		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
+		labelRangesByIndex.register(this);
 	}
 
 	public void setSaver(Saver saver) {
 		this.saver = requireNonNull(saver);
+		saver.register(this);
 	}
 
 	private void savePerhaps() {

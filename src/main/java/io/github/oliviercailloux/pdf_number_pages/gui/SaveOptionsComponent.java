@@ -21,12 +21,14 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.events.AutoSaveChanged;
-import io.github.oliviercailloux.pdf_number_pages.events.FinishedEvent;
+import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OverwriteChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.ReadEvent;
+import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
 public class SaveOptionsComponent {
@@ -34,7 +36,11 @@ public class SaveOptionsComponent {
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(SaveOptionsComponent.class);
 
+	private AutoSaver autoSaver;
+
 	private Label label;
+
+	private LabelRangesByIndex labelRangesByIndex;
 
 	private Button saveButton;
 
@@ -52,10 +58,22 @@ public class SaveOptionsComponent {
 		saveButton = null;
 		autoSaveButton = null;
 		saver = null;
+		autoSaver = null;
+		labelRangesByIndex = null;
 	}
 
-	public void autoSaveChangedEvent(AutoSaveChanged event) {
+	@Subscribe
+	public void autoSaveChanged(@SuppressWarnings("unused") AutoSaveChanged event) {
 		autoSaveButton.setSelection(event.autoSave());
+		setSaveButtonEnabled();
+	}
+
+	public AutoSaver getAutoSaver() {
+		return autoSaver;
+	}
+
+	public LabelRangesByIndex getLabelRangesByIndex() {
+		return labelRangesByIndex;
 	}
 
 	public Saver getSaver() {
@@ -119,6 +137,7 @@ public class SaveOptionsComponent {
 	@Subscribe
 	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
 		setSaveError("");
+		setSaveButtonEnabled();
 	}
 
 	@Subscribe
@@ -142,13 +161,21 @@ public class SaveOptionsComponent {
 	}
 
 	@Subscribe
-	public void saverHasFinishedEvent(FinishedEvent event) {
+	public void saverHasFinishedEvent(SaverFinishedEvent event) {
 		setSaveError(event.getErrorMessage());
 	}
 
-	public void setSaveButtonEnabled(boolean enabled) {
+	public void setAutoSaver(AutoSaver autoSaver) {
+		this.autoSaver = requireNonNull(autoSaver);
+	}
+
+	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
+		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
+	}
+
+	public void setSaveButtonEnabled() {
 		checkState(saveButton != null);
-		saveButton.setEnabled(enabled);
+		saveButton.setEnabled(!autoSaver.autoSaves() && !labelRangesByIndex.isEmpty());
 	}
 
 	public void setSaver(Saver saver) {

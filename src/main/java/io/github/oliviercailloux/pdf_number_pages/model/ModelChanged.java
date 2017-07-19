@@ -1,23 +1,27 @@
 package io.github.oliviercailloux.pdf_number_pages.model;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class ModelChanged {
+
+	public static ModelChanged newModelChanged(int elementIndex, ModelOperation op) {
+		final ModelChanged modelChanged = new ModelChanged();
+		modelChanged.elementIndex = elementIndex;
+		modelChanged.op = requireNonNull(op);
+		return modelChanged;
+	}
+
+	public static ModelChanged newModelChangedAll() {
+		return new ModelChanged();
+	}
 
 	private int elementIndex;
 
 	private ModelOperation op;
 
-	public ModelChanged(int elementIndex, ModelOperation op) {
-		this.elementIndex = elementIndex;
-		this.op = requireNonNull(op);
-	}
-
-	public ModelChanged(ModelOperation op) {
-		checkArgument(op == ModelOperation.ALL);
+	private ModelChanged() {
 		elementIndex = -1;
-		this.op = op;
+		this.op = ModelOperation.ALL;
 	}
 
 	public int getElementIndex() {

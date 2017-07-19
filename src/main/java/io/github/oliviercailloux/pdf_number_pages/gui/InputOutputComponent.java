@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
+import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
@@ -141,6 +142,11 @@ public class InputOutputComponent {
 
 	public void register(Object listener) {
 		eventBus.register(requireNonNull(listener));
+	}
+
+	@Subscribe
+	public void saverFinishedEvent(@SuppressWarnings("unused") SaverFinishedEvent event) {
+		setChangesEnabled(true);
 	}
 
 	public void setChangesEnabled(boolean enabled) {
