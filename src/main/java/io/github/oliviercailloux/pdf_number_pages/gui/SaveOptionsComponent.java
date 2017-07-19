@@ -21,11 +21,11 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.events.AutoSaveChanged;
-import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OverwriteChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.ReadEvent;
+import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
@@ -36,8 +36,6 @@ public class SaveOptionsComponent {
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(SaveOptionsComponent.class);
 
-	private AutoSaver autoSaver;
-
 	private Label label;
 
 	private LabelRangesByIndex labelRangesByIndex;
@@ -45,6 +43,8 @@ public class SaveOptionsComponent {
 	private Button saveButton;
 
 	Button autoSaveButton;
+
+	AutoSaver autoSaver;
 
 	final EventBus eventBus = new EventBus(SaveOptionsComponent.class.getCanonicalName());
 
@@ -64,6 +64,7 @@ public class SaveOptionsComponent {
 
 	@Subscribe
 	public void autoSaveChanged(@SuppressWarnings("unused") AutoSaveChanged event) {
+		assert Display.getCurrent() != null;
 		autoSaveButton.setSelection(event.autoSave());
 		setSaveButtonEnabled();
 	}
@@ -92,10 +93,10 @@ public class SaveOptionsComponent {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				LOGGER.debug("Selected button autoSave.");
-				eventBus.post(new AutoSaveChanged(autoSaveButton.getSelection()));
+				autoSaver.setAutoSave(autoSaveButton.getSelection());
 			}
 		});
-		autoSaveButton.setSelection(false);
+		autoSaveButton.setSelection(autoSaver.autoSaves());
 
 		saveButton = new Button(buttonsComposite, SWT.NONE);
 		saveButton.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
@@ -117,7 +118,7 @@ public class SaveOptionsComponent {
 				saver.setOverwrite(overwriteButton.getSelection());
 			}
 		});
-		overwriteButton.setSelection(false);
+		overwriteButton.setSelection(saver.getOverwrite());
 
 		label = new Label(buttonsComposite, SWT.NONE);
 		final GridData labelLayoutData = new GridData(SWT.LEFT, SWT.CENTER, true, false);
@@ -125,30 +126,28 @@ public class SaveOptionsComponent {
 		label.setLayoutData(labelLayoutData);
 		Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
 		label.setForeground(red);
-
-		eventBus.post(new AutoSaveChanged(autoSaveButton.getSelection()));
 	}
 
 	@Subscribe
-	public void inputPathChangedEvent(@SuppressWarnings("unused") InputPathChanged event) {
+	public void inputPathChanged(@SuppressWarnings("unused") InputPathChanged event) {
 		setReadError("Reading…");
 	}
 
 	@Subscribe
 	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
+		assert Display.getCurrent() != null;
 		setSaveError("");
-		setSaveButtonEnabled();
 	}
 
 	@Subscribe
-	public void outputPathChangedEvent(@SuppressWarnings("unused") OutputPathChanged event) {
+	public void outputPathChanged(@SuppressWarnings("unused") OutputPathChanged event) {
+		assert Display.getCurrent() != null;
 		setSaveError("");
 	}
 
-	public void overwriteChangedEvent(OverwriteChanged event) {
-		Display.getCurrent().asyncExec(() -> {
-			overwriteButton.setEnabled(event.overwrite());
-		});
+	public void overwriteChanged(OverwriteChanged event) {
+		assert Display.getCurrent() != null;
+		overwriteButton.setEnabled(event.overwrite());
 	}
 
 	@Subscribe
@@ -161,7 +160,7 @@ public class SaveOptionsComponent {
 	}
 
 	@Subscribe
-	public void saverHasFinishedEvent(SaverFinishedEvent event) {
+	public void saverFinished(SaverFinishedEvent event) {
 		setSaveError(event.getErrorMessage());
 	}
 

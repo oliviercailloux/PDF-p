@@ -86,7 +86,7 @@ public class SavedStatusComputer {
 	}
 
 	@Subscribe
-	public void saverFinishedEvent(@SuppressWarnings("unused") SaverFinishedEvent event) {
+	public void saverFinished(@SuppressWarnings("unused") SaverFinishedEvent event) {
 		setSavedStatus(event);
 	}
 

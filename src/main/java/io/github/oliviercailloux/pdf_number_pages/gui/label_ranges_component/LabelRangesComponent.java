@@ -1,5 +1,7 @@
 package io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component;
 
+import static java.util.Objects.requireNonNull;
+
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnWeightData;
@@ -23,6 +25,7 @@ import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.events.ReadEvent;
 import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
+import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 import io.github.oliviercailloux.pdf_number_pages.model.RangeStyle;
 import io.github.oliviercailloux.swt_tools.JFace;
@@ -52,10 +55,16 @@ public class LabelRangesComponent {
 
 	private KeyAdapter tableKeyListener;
 
+	LabelRangesByIndex labelRangesByIndex;
+
 	TableViewer viewer;
 
 	public LabelRangesComponent() {
 		tableKeyListener = null;
+	}
+
+	public LabelRangesByIndex getLabelRangesByIndex() {
+		return labelRangesByIndex;
 	}
 
 	/**
@@ -118,6 +127,10 @@ public class LabelRangesComponent {
 		}
 	}
 
+	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
+		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
+	}
+
 	private void initTable(Composite parent) {
 		final TableColumnLayout tableLayout = new TableColumnLayout(true);
 		tableComposite = new Composite(parent, SWT.NONE);
@@ -175,18 +188,18 @@ public class LabelRangesComponent {
 					for (Object o : sel.toList()) {
 						final int elementIndex = (Integer) o;
 						if (elementIndex == 0) {
-							Controller.getInstance().getLabelRangesByIndex().setPrefix(0, "");
-							Controller.getInstance().getLabelRangesByIndex().setStyle(0, RangeStyle.DECIMAL);
-							Controller.getInstance().getLabelRangesByIndex().setStart(0, 1);
+							labelRangesByIndex.setPrefix(0, "");
+							labelRangesByIndex.setStyle(0, RangeStyle.DECIMAL);
+							labelRangesByIndex.setStart(0, 1);
 						} else {
-							Controller.getInstance().getLabelRangesByIndex().removeExisting(elementIndex);
+							labelRangesByIndex.removeExisting(elementIndex);
 						}
 					}
 					e.doit = false;
 				} else if (e.character == PLUS_KEY) {
 					LOGGER.debug("Pressed plus.");
-					if (!Controller.getInstance().getLabelRangesByIndex().isEmpty()) {
-						Controller.getInstance().getLabelRangesByIndex().add();
+					if (!labelRangesByIndex.isEmpty()) {
+						labelRangesByIndex.add();
 						e.doit = false;
 					}
 				}

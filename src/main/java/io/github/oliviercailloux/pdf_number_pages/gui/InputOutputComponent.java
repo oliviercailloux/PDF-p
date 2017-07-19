@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
@@ -53,13 +52,9 @@ public class InputOutputComponent {
 
 	private Button sourceButton;
 
-	boolean enabled;
-
 	Label sourceText;
 
-	public InputOutputComponent(Saver saver) {
-		this.saver = requireNonNull(saver);
-		enabled = true;
+	public InputOutputComponent() {
 		sourceButton = null;
 		destButton = null;
 		destText = null;
@@ -107,9 +102,7 @@ public class InputOutputComponent {
 		sourceButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (enabled) {
-					askForInputFile();
-				}
+				askForInputFile();
 			}
 		});
 
@@ -122,40 +115,24 @@ public class InputOutputComponent {
 		destButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (enabled) {
-					askForOutputFile();
-				}
+				askForOutputFile();
 			}
 		});
 	}
 
-	public void inputPathChangedEvent(InputPathChanged event) {
-		Display.getCurrent().asyncExec(() -> {
-			setInputText(event.getInputPath());
-		});
+	public void inputPathChanged(InputPathChanged event) {
+		assert Display.getCurrent() != null;
+		setInputText(event.getInputPath());
 	}
 
 	@Subscribe
-	public void outputPathChangedEvent(OutputPathChanged event) {
+	public void outputPathChanged(OutputPathChanged event) {
+		assert Display.getCurrent() != null;
 		setOutputText(event.getOutputPath());
 	}
 
 	public void register(Object listener) {
 		eventBus.register(requireNonNull(listener));
-	}
-
-	@Subscribe
-	public void saverFinishedEvent(@SuppressWarnings("unused") SaverFinishedEvent event) {
-		setChangesEnabled(true);
-	}
-
-	public void setChangesEnabled(boolean enabled) {
-		this.enabled = enabled;
-		if (composite.isDisposed()) {
-			return;
-		}
-		sourceButton.setEnabled(this.enabled);
-		destButton.setEnabled(this.enabled);
 	}
 
 	public void setReader(Reader reader) {

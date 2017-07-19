@@ -1,5 +1,6 @@
 package io.github.oliviercailloux.pdf_number_pages.services.saver;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
@@ -26,6 +27,7 @@ public class SaveJob {
 
 	public SaveJob(LabelRangesByIndex labelRanges, Path inputPath, Path outputPath, boolean overwrite) {
 		this.labelRanges = LabelRangesByIndex.deepImmutableCopy(requireNonNull(labelRanges));
+		checkArgument(!labelRanges.isEmpty());
 		this.inputPath = requireNonNull(inputPath);
 		this.outputPath = requireNonNull(outputPath);
 		this.overwrite = overwrite;

@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -23,7 +22,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.events.OverwriteChanged;
-import io.github.oliviercailloux.pdf_number_pages.events.SaveEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
@@ -42,8 +40,6 @@ public class Saver {
 
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(Saver.class);
-
-	private Controller controller;
 
 	private final ListeningExecutorService executor = MoreExecutors
 			.listeningDecorator(Executors.newSingleThreadExecutor());
@@ -113,6 +109,7 @@ public class Saver {
 	}
 
 	public void save() {
+		checkState(!labelRangesByIndex.isEmpty());
 		if (submittedJob != null) {
 			submittedJob.cancel(true);
 		}
@@ -142,16 +139,6 @@ public class Saver {
 				Display.getDefault().asyncExec(() -> eventBus.post(event));
 			}
 		}, MoreExecutors.directExecutor());
-	}
-
-	@Subscribe
-	public void saveEvent(@SuppressWarnings("unused") SaveEvent event) {
-		checkState(!controller.getLabelRangesByIndex().isEmpty());
-		save();
-	}
-
-	public void setController(Controller controller) {
-		this.controller = requireNonNull(controller);
 	}
 
 	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {

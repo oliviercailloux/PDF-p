@@ -3,7 +3,6 @@ package io.github.oliviercailloux.pdf_number_pages.gui;
 import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Paths;
-import java.util.Optional;
 
 import org.apache.pdfbox.pdmodel.common.PDPageLabelRange;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageFitWidthDestination;
@@ -19,18 +18,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.events.DisplayDisposedEvent;
-import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.events.ShellClosedEvent;
 import io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component.LabelRangesComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
-import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
-import io.github.oliviercailloux.pdf_number_pages.services.saver.SaveJob;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
 public class Controller {
@@ -71,16 +66,28 @@ public class Controller {
 
 	public Controller() {
 		labelRangesByIndex = new LabelRangesByIndex();
+
 		saver = new Saver();
+		saver.setLabelRangesByIndex(labelRangesByIndex);
+
 		autoSaver = new AutoSaver();
-		reader = new Reader();
 		autoSaver.setSaver(saver);
+		autoSaver.setLabelRangesByIndex(labelRangesByIndex);
+
+		reader = new Reader();
+		reader.setLabelRangesByIndex(labelRangesByIndex);
+
 		display = Display.getDefault();
+
 		labelRangesComponent = new LabelRangesComponent();
-		inputOutputComponent = new InputOutputComponent(saver);
-		saver.setController(this);
+		labelRangesComponent.setLabelRangesByIndex(labelRangesByIndex);
+		inputOutputComponent = new InputOutputComponent();
+		inputOutputComponent.setReader(reader);
+		inputOutputComponent.setSaver(saver);
 		saveOptionsComponent = new SaveOptionsComponent();
+		saveOptionsComponent.setLabelRangesByIndex(labelRangesByIndex);
 		saveOptionsComponent.setSaver(saver);
+		saveOptionsComponent.setAutoSaver(autoSaver);
 
 		final Exitter exitter = new Exitter();
 		exitter.setController(this);
@@ -89,9 +96,6 @@ public class Controller {
 		register(inputOutputComponent);
 		register(saveOptionsComponent);
 		register(labelRangesComponent);
-		register(saver);
-		register(autoSaver);
-		register(reader);
 		register(exitter);
 	}
 
