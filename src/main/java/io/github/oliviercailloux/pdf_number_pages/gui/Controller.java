@@ -90,7 +90,8 @@ public class Controller {
 		saveOptionsComponent.setAutoSaver(autoSaver);
 
 		final Exitter exitter = new Exitter();
-		exitter.setController(this);
+		exitter.setSaver(saver);
+		exitter.setShell(shell);
 
 		register(this);
 		register(inputOutputComponent);
