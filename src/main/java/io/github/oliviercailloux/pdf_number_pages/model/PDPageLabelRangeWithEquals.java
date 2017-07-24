@@ -12,6 +12,9 @@ public class PDPageLabelRangeWithEquals extends PDPageLabelRange {
 	@SuppressWarnings("unused")
 	private static final Logger LOGGER = LoggerFactory.getLogger(PDPageLabelRangeWithEquals.class);
 
+	/**
+	 * A range with null prefix and style, and start is 1
+	 */
 	public PDPageLabelRangeWithEquals() {
 		super();
 	}

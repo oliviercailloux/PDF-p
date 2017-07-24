@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.EventBus;
 
-import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
-import io.github.oliviercailloux.pdf_number_pages.events.ReadEvent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 
 public class Reader {
@@ -24,23 +22,30 @@ public class Reader {
 	 */
 	private Path inputPath;
 
-	private LabelRangesByIndex labelRangesByIndex;
-
 	private final LabelRangesOperator labelRangesOperator = new LabelRangesOperator();
+
+	private LabelRangesByIndex model;
 
 	final EventBus eventBus = new EventBus(Reader.class.getCanonicalName());
 
 	public Reader() {
 		inputPath = Paths.get(System.getProperty("user.home"), "in.pdf");
-		labelRangesByIndex = null;
+		model = null;
 	}
 
 	public Path getInputPath() {
 		return inputPath;
 	}
 
-	public LabelRangesByIndex getLabelRangesByIndex() {
-		return labelRangesByIndex;
+	/**
+	 * @return <code>null</code> iff no read has ever occurred.
+	 */
+	public LabelRangesByIndex getLastRead() {
+		return labelRangesOperator.getLastRead();
+	}
+
+	public LabelRangesByIndex getModel() {
+		return model;
 	}
 
 	public void register(Object listener) {
@@ -48,23 +53,28 @@ public class Reader {
 	}
 
 	public void setInputPath(Path inputPath) {
+		final Path oldInputPath = this.inputPath;
+		if (oldInputPath.equals(inputPath)) {
+			return;
+		}
 		this.inputPath = requireNonNull(inputPath);
-		LOGGER.info("Posting input path changed event.");
-		eventBus.post(new InputPathChanged(this.inputPath));
+		final InputPathChanged event = new InputPathChanged(this.inputPath);
+		LOGGER.info("Firing: {}.", event);
+		eventBus.post(event);
 
 		LOGGER.info("Input path changed, reading.");
 		final String errorMessage;
 		final boolean succeeded;
-		labelRangesByIndex.clear();
+		model.clear();
 		final LabelRangesByIndex readLabelRanges = labelRangesOperator.readLabelRanges(this.inputPath);
-		labelRangesByIndex.putAll(readLabelRanges);
+		model.putAll(readLabelRanges);
 		errorMessage = labelRangesOperator.getErrorMessage();
 		succeeded = labelRangesOperator.succeeded();
 
 		eventBus.post(new ReadEvent(succeeded, errorMessage));
 	}
 
-	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
-		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
+	public void setModel(LabelRangesByIndex labelRangesByIndex) {
+		this.model = requireNonNull(labelRangesByIndex);
 	}
 }

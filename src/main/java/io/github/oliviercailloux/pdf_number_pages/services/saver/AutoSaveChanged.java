@@ -1,4 +1,4 @@
-package io.github.oliviercailloux.pdf_number_pages.events;
+package io.github.oliviercailloux.pdf_number_pages.services.saver;
 
 public class AutoSaveChanged {
 

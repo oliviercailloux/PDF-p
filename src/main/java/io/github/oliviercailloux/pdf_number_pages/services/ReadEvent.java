@@ -1,6 +1,8 @@
-package io.github.oliviercailloux.pdf_number_pages.events;
+package io.github.oliviercailloux.pdf_number_pages.services;
 
 import static java.util.Objects.requireNonNull;
+
+import com.google.common.base.MoreObjects;
 
 public class ReadEvent {
 
@@ -19,6 +21,12 @@ public class ReadEvent {
 
 	public boolean succeeded() {
 		return succeeded;
+	}
+
+	@Override
+	public String toString() {
+		return MoreObjects.toStringHelper(this).add("Succeeded", succeeded).add("Error message", errorMessage)
+				.toString();
 	}
 
 }

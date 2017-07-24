@@ -1,10 +1,8 @@
-package io.github.oliviercailloux.pdf_number_pages.events;
+package io.github.oliviercailloux.pdf_number_pages.services.saver;
 
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.MoreObjects;
-
-import io.github.oliviercailloux.pdf_number_pages.services.saver.SaveJob;
 
 public class SaverFinishedEvent {
 

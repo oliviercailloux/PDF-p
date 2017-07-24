@@ -6,24 +6,19 @@ import static java.util.Objects.requireNonNull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.eclipse.swt.widgets.Display;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
-import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
-import io.github.oliviercailloux.pdf_number_pages.events.OverwriteChanged;
-import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
-import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 
@@ -55,11 +50,18 @@ public class Saver {
 
 	private Reader reader;
 
+	/**
+	 * Not <code>null</code>.
+	 */
+	private Executor savedEventsFiringExecutor;
+
 	private ListenableFuture<Void> submittedJob;
+
+	private SaverRunnableCallback submittedJobCallback;
 
 	final EventBus eventBus = new EventBus(Saver.class.getCanonicalName());
 
-	Optional<SaverFinishedEvent> lastSaveJobResult;
+	volatile Optional<SaverFinishedEvent> lastSaveJobResult;
 
 	public Saver() {
 		submittedJob = null;
@@ -67,6 +69,8 @@ public class Saver {
 		outputPath = Paths.get(System.getProperty("user.home"), "out.pdf");
 		labelRangesByIndex = null;
 		overwrite = false;
+		savedEventsFiringExecutor = MoreExecutors.directExecutor();
+		submittedJobCallback = null;
 	}
 
 	public void close() {
@@ -104,13 +108,19 @@ public class Saver {
 		return reader;
 	}
 
+	public boolean isRunning() {
+		return submittedJob != null && !submittedJob.isDone();
+	}
+
 	public void register(Object listener) {
 		eventBus.register(requireNonNull(listener));
 	}
 
 	public void save() {
 		checkState(!labelRangesByIndex.isEmpty());
+		assert (submittedJob == null) == (submittedJobCallback == null);
 		if (submittedJob != null) {
+			submittedJobCallback.cancel();
 			submittedJob.cancel(true);
 		}
 		LOGGER.debug("Attempting save.");
@@ -118,27 +128,8 @@ public class Saver {
 		final Path inputPath = reader.getInputPath();
 		final SaveJob saveJob = new SaveJob(labelRangesByIndex, inputPath, outputPath, overwrite);
 		submittedJob = executor.submit(new SaverRunnable(saveJob));
-		Futures.addCallback(submittedJob, new FutureCallback<Void>() {
-
-			@Override
-			public void onFailure(Throwable t) {
-				LOGGER.error("Problem while saving.", t);
-				Display.getDefault().asyncExec(() -> {
-					final SaverFinishedEvent event = new SaverFinishedEvent(saveJob, t.getMessage());
-					LOGGER.debug("Saving new finished event: {}.", event);
-					lastSaveJobResult = Optional.of(event);
-					eventBus.post(event);
-				});
-			}
-
-			@Override
-			public void onSuccess(Void result) {
-				final SaverFinishedEvent event = new SaverFinishedEvent(saveJob, "");
-				LOGGER.debug("Saving new finished event: {}.", event);
-				lastSaveJobResult = Optional.of(event);
-				Display.getDefault().asyncExec(() -> eventBus.post(event));
-			}
-		}, MoreExecutors.directExecutor());
+		submittedJobCallback = new SaverRunnableCallback(this, saveJob);
+		Futures.addCallback(submittedJob, submittedJobCallback, savedEventsFiringExecutor);
 	}
 
 	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
@@ -146,17 +137,38 @@ public class Saver {
 	}
 
 	public void setOutputPath(Path outputPath) {
+		final Path oldOutputPath = this.outputPath;
+		if (oldOutputPath.equals(outputPath)) {
+			return;
+		}
 		this.outputPath = requireNonNull(outputPath);
 		LOGGER.debug("Posting output path changed event.");
 		eventBus.post(new OutputPathChanged(outputPath));
 	}
 
 	public void setOverwrite(boolean overwrite) {
+		final boolean overwrited = this.overwrite;
 		this.overwrite = overwrite;
-		eventBus.post(new OverwriteChanged(overwrite));
+		if (overwrited != overwrite) {
+			final OverwriteChanged event = new OverwriteChanged(overwrite);
+			LOGGER.debug("Firing: {}.", event);
+			eventBus.post(event);
+		}
 	}
 
 	public void setReader(Reader reader) {
 		this.reader = requireNonNull(reader);
+	}
+
+	public void setSavedEventsFiringExecutor(Executor savedEventsExecutor) {
+		this.savedEventsFiringExecutor = requireNonNull(savedEventsExecutor);
+	}
+
+	void post(SaverFinishedEvent event) {
+		eventBus.post(requireNonNull(event));
+	}
+
+	void setLastSaveJobResult(Optional<SaverFinishedEvent> lastSaveJobResult) {
+		this.lastSaveJobResult = lastSaveJobResult;
 	}
 }

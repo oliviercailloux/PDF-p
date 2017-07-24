@@ -7,13 +7,14 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import io.github.oliviercailloux.pdf_number_pages.events.SaverFinishedEvent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaveJob;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
+import io.github.oliviercailloux.pdf_number_pages.services.saver.SaverFinishedEvent;
 
 /**
  * <p>
@@ -46,6 +47,8 @@ public class SavedStatusComputer {
 
 	private Saver saver;
 
+	final EventBus eventBus = new EventBus(SavedStatusComputer.class.getCanonicalName());
+
 	public SavedStatusComputer() {
 		isSaved = false;
 		labelRangesByIndex = null;
@@ -75,14 +78,11 @@ public class SavedStatusComputer {
 		LOGGER.debug("Model changed: {}.", event);
 		if (lastSaveJobResult.isPresent()) {
 			setSavedStatus(lastSaveJobResult.get());
-			/**
-			 * TODO here we set the saved status, and possibly it is saved
-			 * already, but we might save anyway! Example: edit a combo box but
-			 * do not change it, when auto save: the file is saved again.
-			 * Secondly, when clicking auto save, no save should occur if file
-			 * was saved already.
-			 */
 		}
+	}
+
+	public void register(Object listener) {
+		eventBus.register(requireNonNull(listener));
 	}
 
 	@Subscribe
@@ -105,13 +105,17 @@ public class SavedStatusComputer {
 	}
 
 	private void setSavedStatus(SaverFinishedEvent event) {
+		final boolean wasSaved = isSaved;
 		final SaveJob job = event.getSaveJob();
-		LOGGER.debug("Testing equality.");
 		final boolean eqModel = job.getLabelRangesByIndex().equals(labelRangesByIndex);
-		LOGGER.debug("Tested equality.");
 		final boolean eqInp = job.getInputPath().equals(reader.getInputPath());
 		final boolean eqOutp = job.getOutputPath().equals(saver.getOutputPath());
 		final boolean noErr = event.getErrorMessage().isEmpty();
 		isSaved = eqModel && eqInp && eqOutp && noErr;
+		LOGGER.debug("Tested equality: {}, {}, {}, {}.", eqModel, eqInp, eqOutp, noErr);
+
+		if (wasSaved != isSaved) {
+			eventBus.post(new SavedStatusChanged(isSaved));
+		}
 	}
 }

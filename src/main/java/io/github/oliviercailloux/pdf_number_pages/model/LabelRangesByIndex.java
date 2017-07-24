@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
@@ -14,6 +15,7 @@ import org.apache.pdfbox.pdmodel.common.PDPageLabels;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ForwardingNavigableMap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -72,57 +74,75 @@ public class LabelRangesByIndex extends ForwardingNavigableMap<Integer, PDPageLa
 	}
 
 	public void move(int oldIndex, int newIndex) {
-		final PDPageLabelRangeWithEquals old = remove(oldIndex);
-		final PDPageLabelRangeWithEquals range = old;
+		if (oldIndex == newIndex) {
+			return;
+		}
+		LOGGER.info("Removing {}, adding {}.", oldIndex, newIndex);
+		final PDPageLabelRangeWithEquals range = removeExisting(oldIndex);
 		assert range != null;
-		eventBus.post(ModelChanged.newModelChanged(oldIndex, ModelOperation.REMOVE));
 		putNew(newIndex, range);
-		LOGGER.debug("Removed {}, added {}.", oldIndex, newIndex);
-		eventBus.post(ModelChanged.newModelChanged(newIndex, ModelOperation.ADD));
+	}
+
+	@Override
+	public void putAll(Map<? extends Integer, ? extends PDPageLabelRangeWithEquals> map) {
+		super.putAll(map);
+		LOGGER.debug("All put, firing.");
+		eventBus.post(ModelChanged.newModelChangedAll());
 	}
 
 	public void putNew(int index, PDPageLabelRangeWithEquals range) {
 		final PDPageLabelRange previous = delegate.put(index, range);
 		checkState(previous == null);
 		LOGGER.debug("Putting new range {} at {}.", range, index);
-		eventBus.post(ModelChanged.newModelChanged(index, ModelOperation.ADD));
+		eventBus.post(ModelChanged.newModelChanged(ModelOperation.ADD, index));
 	}
 
 	public void register(Object listener) {
 		eventBus.register(listener);
 	}
 
-	public void removeExisting(int index) {
+	public PDPageLabelRangeWithEquals removeExisting(int index) {
 		assert index != 0 : "Removal at first page not supported";
-		final PDPageLabelRange old = delegate.remove(index);
+		final PDPageLabelRangeWithEquals old = delegate.remove(index);
 		assert old != null;
-		eventBus.post(ModelChanged.newModelChanged(index, ModelOperation.REMOVE));
+		eventBus.post(ModelChanged.newModelChanged(ModelOperation.REMOVE, index));
+		return old;
 	}
 
 	public void setPrefix(int elementIndex, String prefix) {
 		requireNonNull(prefix);
-		final PDPageLabelRange element = get(elementIndex);
-		checkArgument(element != null);
-		element.setPrefix(Strings.emptyToNull(prefix));
+		final PDPageLabelRange range = get(elementIndex);
+		checkArgument(range != null);
+		final String newPrefix = Strings.emptyToNull(prefix);
+		if (Objects.equal(range.getPrefix(), newPrefix)) {
+			return;
+		}
+		range.setPrefix(newPrefix);
 		LOGGER.debug("Set prefix value for {}: {}.", elementIndex, prefix);
-		eventBus.post(ModelChanged.newModelChanged(elementIndex, ModelOperation.SET_PREFIX));
+		eventBus.post(ModelChanged.newModelChanged(ModelOperation.SET_PREFIX, elementIndex));
 	}
 
 	public void setStart(int elementIndex, int start) {
-		final PDPageLabelRange element = get(elementIndex);
-		checkArgument(element != null);
-		element.setStart(start);
+		final PDPageLabelRange range = get(elementIndex);
+		checkArgument(range != null);
+		if (range.getStart() == start) {
+			return;
+		}
+		range.setStart(start);
 		LOGGER.debug("Set start value for {}: {}.", elementIndex, start);
-		eventBus.post(ModelChanged.newModelChanged(elementIndex, ModelOperation.SET_START));
+		eventBus.post(ModelChanged.newModelChanged(ModelOperation.SET_START, elementIndex));
 	}
 
 	public void setStyle(int elementIndex, RangeStyle style) {
 		final PDPageLabelRange range = get(elementIndex);
 		checkArgument(range != null);
-		LOGGER.debug("Setting style value for {}: {}.", elementIndex, style);
 		final String stylePdfBox = style.toPdfBoxStyle();
+		if (Objects.equal(range.getStyle(), stylePdfBox)) {
+			return;
+		}
+		LOGGER.debug("Setting style value for {}: {}.", elementIndex, style);
 		range.setStyle(stylePdfBox);
-		eventBus.post(ModelChanged.newModelChanged(elementIndex, ModelOperation.SET_STYLE));
+		eventBus.post(ModelChanged.newModelChanged(ModelOperation.SET_STYLE, elementIndex));
 	}
 
 	public PDPageLabels toPDPageLabel(PDDocument document) {

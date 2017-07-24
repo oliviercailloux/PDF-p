@@ -22,9 +22,11 @@ import org.slf4j.LoggerFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import io.github.oliviercailloux.pdf_number_pages.events.InputPathChanged;
-import io.github.oliviercailloux.pdf_number_pages.events.OutputPathChanged;
+import io.github.oliviercailloux.pdf_number_pages.services.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
+import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusChanged;
+import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
+import io.github.oliviercailloux.pdf_number_pages.services.saver.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
 /**
@@ -48,6 +50,8 @@ public class InputOutputComponent {
 
 	private Reader reader;
 
+	private SavedStatusComputer savedStatusComputer;
+
 	private Saver saver;
 
 	private Button sourceButton;
@@ -58,6 +62,17 @@ public class InputOutputComponent {
 		sourceButton = null;
 		destButton = null;
 		destText = null;
+		savedStatusComputer = null;
+		saver = null;
+	}
+
+	public void addInputPathButtonAction(Runnable action) {
+		sourceButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				action.run();
+			}
+		});
 	}
 
 	public void askForInputFile() {
@@ -84,6 +99,10 @@ public class InputOutputComponent {
 		return reader;
 	}
 
+	public SavedStatusComputer getSavedStatusComputer() {
+		return savedStatusComputer;
+	}
+
 	public Saver getSaver() {
 		return saver;
 	}
@@ -99,12 +118,6 @@ public class InputOutputComponent {
 		sourceText = new Label(composite, SWT.NONE);
 		sourceText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		setInputText(reader.getInputPath());
-		sourceButton.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				askForInputFile();
-			}
-		});
 
 		destButton = new Button(composite, SWT.NONE);
 		destButton.setText("Dest");
@@ -118,9 +131,13 @@ public class InputOutputComponent {
 				askForOutputFile();
 			}
 		});
+
+		savedStatusChanged(new SavedStatusChanged(savedStatusComputer.isSaved()));
 	}
 
+	@Subscribe
 	public void inputPathChanged(InputPathChanged event) {
+		LOGGER.info("Got: {}.", event);
 		assert Display.getCurrent() != null;
 		setInputText(event.getInputPath());
 	}
@@ -135,6 +152,17 @@ public class InputOutputComponent {
 		eventBus.register(requireNonNull(listener));
 	}
 
+	@Subscribe
+	public void savedStatusChanged(SavedStatusChanged event) {
+		LOGGER.info("Saved status changed: {}.", event);
+		if (!event.isSaved() || saver.isRunning()) {
+			Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+			destText.setForeground(red);
+		} else {
+			destText.setForeground(null);
+		}
+	}
+
 	public void setReader(Reader reader) {
 		this.reader = requireNonNull(reader);
 	}
@@ -146,6 +174,10 @@ public class InputOutputComponent {
 			Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
 			destText.setForeground(red);
 		}
+	}
+
+	public void setSavedStatusComputer(SavedStatusComputer savedStatusComputer) {
+		this.savedStatusComputer = requireNonNull(savedStatusComputer);
 	}
 
 	public void setSaver(Saver saver) {

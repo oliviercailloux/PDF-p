@@ -31,38 +31,45 @@ public class LabelRangesOperator {
 
 	private boolean overwrite;
 
+	private LabelRangesByIndex ranges;
+
 	private boolean succeeded;
 
 	public LabelRangesOperator() {
 		errorMessage = "";
 		overwrite = false;
 		succeeded = false;
+		ranges = null;
 	}
 
 	public String getErrorMessage() {
 		return errorMessage;
 	}
 
+	/**
+	 * @return <code>null</code> iff no read has ever occurred.
+	 */
+	public LabelRangesByIndex getLastRead() {
+		return ranges;
+	}
+
 	public LabelRangesByIndex read(PDPageLabels labels) {
-		final LabelRangesByIndex ranges = new LabelRangesByIndex();
-		final SortedSet<Integer> indices = labels.getPageIndices();
-		for (Integer index : indices) {
-			final PDPageLabelRange range = labels.getPageLabelRange(index);
-			final PDPageLabelRangeWithEquals newRange = new PDPageLabelRangeWithEquals(range);
-			ranges.put(index, newRange);
+		ranges = new LabelRangesByIndex();
+		if (labels == null) {
+			final PDPageLabelRangeWithEquals range = new PDPageLabelRangeWithEquals();
+			ranges.put(0, range);
+		} else {
+			final SortedSet<Integer> indices = labels.getPageIndices();
+			for (Integer index : indices) {
+				final PDPageLabelRange range = labels.getPageLabelRange(index);
+				final PDPageLabelRangeWithEquals newRange = new PDPageLabelRangeWithEquals(range);
+				ranges.put(index, newRange);
+			}
 		}
-//		for (int noPage = 0, nbRangesFound = 0; nbRangesFound < labels.getPageRangeCount(); ++noPage) {
-//			final PDPageLabelRange range = labels.getPageLabelRange(noPage);
-//			if (range != null) {
-//				ranges.put(noPage, range);
-//				++nbRangesFound;
-//			}
-//		}
 		return ranges;
 	}
 
 	public LabelRangesByIndex readLabelRanges(Path inputPath) {
-		final LabelRangesByIndex labelRangesByIndex = new LabelRangesByIndex();
 		assert inputPath != null;
 		final File inputFile = inputPath.toFile();
 		if (!inputFile.exists()) {
@@ -73,17 +80,16 @@ public class LabelRangesOperator {
 				assert !document.isEncrypted();
 				final PDDocumentCatalog catalog = document.getDocumentCatalog();
 				final PDPageLabels labels = catalog.getPageLabels();
-				labelRangesByIndex.putAll(read(labels));
+				read(labels);
 				errorMessage = "";
 				succeeded = true;
 			} catch (IOException e) {
-				labelRangesByIndex.clear();
 				LOGGER.error("Reading input file.", e);
 				errorMessage = e.getMessage();
 				succeeded = false;
 			}
 		}
-		return labelRangesByIndex;
+		return ranges;
 	}
 
 	public void saveLabelRanges(Path inputPath, Path outputPath, LabelRangesByIndex labelRangesByIndex) {

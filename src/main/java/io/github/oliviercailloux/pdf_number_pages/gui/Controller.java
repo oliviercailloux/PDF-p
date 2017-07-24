@@ -16,37 +16,32 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.google.common.eventbus.EventBus;
 
-import io.github.oliviercailloux.pdf_number_pages.events.DisplayDisposedEvent;
-import io.github.oliviercailloux.pdf_number_pages.events.ShellClosedEvent;
 import io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component.LabelRangesComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
+import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
 public class Controller {
-	final private static Controller INSTANCE = new Controller();
-
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
-	public static Controller getInstance() {
-		return INSTANCE;
-	}
-
 	public static void main(String[] args) throws Exception {
-		final Controller app = Controller.getInstance();
+		SLF4JBridgeHandler.removeHandlersForRootLogger();
+		SLF4JBridgeHandler.install();
+
+		final Controller app = new Controller();
 //		app.createLabelsAndOutline();
 		app.proceed();
 	}
 
 	private AutoSaver autoSaver;
-
-	private Display display;
 
 	private final InputOutputComponent inputOutputComponent;
 
@@ -56,26 +51,40 @@ public class Controller {
 
 	private Reader reader;
 
+	private final SavedStatusComputer savedStatusComputer;
+
 	private final SaveOptionsComponent saveOptionsComponent;
 
-	private Shell shell;
+	Display display;
 
 	final EventBus eventBus = new EventBus(Controller.class.getCanonicalName());
 
+	final PrudentActor prudentActor;
+
 	final Saver saver;
+
+	Shell shell;
 
 	public Controller() {
 		labelRangesByIndex = new LabelRangesByIndex();
 
+		reader = new Reader();
+		reader.setModel(labelRangesByIndex);
+
 		saver = new Saver();
 		saver.setLabelRangesByIndex(labelRangesByIndex);
+		saver.setReader(reader);
+		saver.setSavedEventsFiringExecutor((r) -> display.asyncExec(r));
 
 		autoSaver = new AutoSaver();
 		autoSaver.setSaver(saver);
 		autoSaver.setLabelRangesByIndex(labelRangesByIndex);
+		autoSaver.setReader(reader);
 
-		reader = new Reader();
-		reader.setLabelRangesByIndex(labelRangesByIndex);
+		savedStatusComputer = new SavedStatusComputer();
+		savedStatusComputer.setLabelRangesByIndex(labelRangesByIndex);
+		savedStatusComputer.setReader(reader);
+		savedStatusComputer.setSaver(saver);
 
 		display = Display.getDefault();
 
@@ -84,20 +93,22 @@ public class Controller {
 		inputOutputComponent = new InputOutputComponent();
 		inputOutputComponent.setReader(reader);
 		inputOutputComponent.setSaver(saver);
+		inputOutputComponent.setSavedStatusComputer(savedStatusComputer);
 		saveOptionsComponent = new SaveOptionsComponent();
 		saveOptionsComponent.setLabelRangesByIndex(labelRangesByIndex);
 		saveOptionsComponent.setSaver(saver);
 		saveOptionsComponent.setAutoSaver(autoSaver);
 
-		final Exitter exitter = new Exitter();
-		exitter.setSaver(saver);
-		exitter.setShell(shell);
+		prudentActor = new PrudentActor();
+		prudentActor.setSaver(saver);
+		prudentActor.setSavedStatusComputer(savedStatusComputer);
+		prudentActor.setLabelRangesByIndex(labelRangesByIndex);
 
 		register(this);
 		register(inputOutputComponent);
 		register(saveOptionsComponent);
 		register(labelRangesComponent);
-		register(exitter);
+		register(prudentActor);
 	}
 
 	public void createLabels() {
@@ -183,15 +194,24 @@ public class Controller {
 		labelRangesComponent.init(shell);
 		saveOptionsComponent.init(shell);
 		inputOutputComponent.init(shell);
+		prudentActor.setShell(shell);
+		inputOutputComponent.addInputPathButtonAction(() -> {
+			prudentActor.setAction(() -> inputOutputComponent.askForInputFile());
+			prudentActor.setActionQuestion("Change input anyway?");
+			prudentActor.actPrudently();
+		});
 
-		Display.getDefault().disposeExec(() -> {
-			eventBus.post(new DisplayDisposedEvent());
+		display.disposeExec(() -> {
+			saver.close();
 		});
 
 		shell.addShellListener(new ShellAdapter() {
 			@Override
-			public void shellClosed(ShellEvent e) {
-				eventBus.post(new ShellClosedEvent(e));
+			public void shellClosed(ShellEvent event) {
+				event.doit = false;
+				prudentActor.setAction(() -> display.close());
+				prudentActor.setActionQuestion("Quit anyway?");
+				prudentActor.actPrudently();
 			}
 		});
 	}
@@ -199,8 +219,12 @@ public class Controller {
 	public void proceed() {
 		LOGGER.info("Start init.");
 		initGui();
-		reader.setInputPath(Paths.get("/home/olivier/Local/Biblio - backup/Roman - Advanced Linear Algebra.pdf"));
-		saver.setOverwrite(true);
+		display.asyncExec(
+				() -> reader.setInputPath(Paths.get("/home/olivier/Biblio/Roman - Advanced Linear Algebra.pdf")));
+		display.asyncExec(() -> {
+			LOGGER.debug("Setting overwrite.");
+			saver.setOverwrite(true);
+		});
 		LOGGER.info("Finished init.");
 		fireView();
 	}
@@ -213,6 +237,7 @@ public class Controller {
 		autoSaver.register(listener);
 		reader.register(listener);
 		labelRangesByIndex.register(listener);
+		savedStatusComputer.register(listener);
 	}
 
 }

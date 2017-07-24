@@ -23,11 +23,10 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.eventbus.Subscribe;
 
-import io.github.oliviercailloux.pdf_number_pages.events.ReadEvent;
-import io.github.oliviercailloux.pdf_number_pages.gui.Controller;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 import io.github.oliviercailloux.pdf_number_pages.model.RangeStyle;
+import io.github.oliviercailloux.pdf_number_pages.services.ReadEvent;
 import io.github.oliviercailloux.swt_tools.JFace;
 
 public class LabelRangesComponent {
@@ -85,6 +84,7 @@ public class LabelRangesComponent {
 	@Subscribe
 	public void modelChangedEvent(ModelChanged event) {
 		final int elementIndex = event.getElementIndex();
+		LOGGER.debug("Model changed: {}.", event);
 		switch (event.getOp()) {
 		case ADD:
 			viewer.add(elementIndex);
@@ -102,7 +102,7 @@ public class LabelRangesComponent {
 			viewer.update(elementIndex, new String[] { COLUMN_NAMES.get(COL_STYLE_IDX) });
 			break;
 		case ALL:
-			viewer.setInput(Controller.getInstance().getLabelRangesByIndex().keySet());
+			viewer.setInput(labelRangesByIndex.keySet());
 			break;
 		default:
 			throw new IllegalStateException();
@@ -175,10 +175,26 @@ public class LabelRangesComponent {
 				return Integer.compare(i1, i2);
 			}
 		});
-		JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_INDEX_IDX), new EditingSupportIndex(viewer));
-		JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_PREFIX_IDX), new EditingSupportPrefix(viewer));
-		JFace.getComboBoxTableViewerColumn(viewer, table.getColumn(COL_STYLE_IDX), new EditingSupportStyle(viewer));
-		JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_START_IDX), new EditingSupportStart(viewer));
+		{
+			EditingSupportIndex editingSupport = new EditingSupportIndex(viewer);
+			JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_INDEX_IDX), editingSupport);
+			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
+		}
+		{
+			EditingSupportPrefix editingSupport = new EditingSupportPrefix(viewer);
+			JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_PREFIX_IDX), editingSupport);
+			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
+		}
+		{
+			EditingSupportStyle editingSupport = new EditingSupportStyle(viewer);
+			JFace.getComboBoxTableViewerColumn(viewer, table.getColumn(COL_STYLE_IDX), editingSupport);
+			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
+		}
+		{
+			EditingSupportStart editingSupport = new EditingSupportStart(viewer);
+			JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_START_IDX), editingSupport);
+			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
+		}
 
 		tableKeyListener = new KeyAdapter() {
 			@Override
