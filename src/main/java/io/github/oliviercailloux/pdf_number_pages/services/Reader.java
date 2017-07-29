@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.eventbus.EventBus;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
+import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 
 public class Reader {
 
@@ -22,19 +24,29 @@ public class Reader {
 	 */
 	private Path inputPath;
 
+	private LabelRangesByIndex labelRangesByIndex;
+
 	private final LabelRangesOperator labelRangesOperator = new LabelRangesOperator();
 
-	private LabelRangesByIndex model;
+	private ReadEvent lastReadEvent;
+
+	private Outline outline;
 
 	final EventBus eventBus = new EventBus(Reader.class.getCanonicalName());
 
 	public Reader() {
 		inputPath = Paths.get(System.getProperty("user.home"), "in.pdf");
-		model = null;
+		labelRangesByIndex = null;
+		outline = null;
+		lastReadEvent = null;
 	}
 
 	public Path getInputPath() {
 		return inputPath;
+	}
+
+	public LabelRangesByIndex getLabelRangesByIndex() {
+		return labelRangesByIndex;
 	}
 
 	/**
@@ -44,8 +56,12 @@ public class Reader {
 		return labelRangesOperator.getLastRead();
 	}
 
-	public LabelRangesByIndex getModel() {
-		return model;
+	public Optional<ReadEvent> getLastReadEvent() {
+		return Optional.ofNullable(lastReadEvent);
+	}
+
+	public Optional<Outline> getOutline() {
+		return Optional.ofNullable(outline);
 	}
 
 	public void register(Object listener) {
@@ -65,16 +81,26 @@ public class Reader {
 		LOGGER.info("Input path changed, reading.");
 		final String errorMessage;
 		final boolean succeeded;
-		model.clear();
+		labelRangesByIndex.clear();
 		final LabelRangesByIndex readLabelRanges = labelRangesOperator.readLabelRanges(this.inputPath);
-		model.putAll(readLabelRanges);
+		labelRangesByIndex.putAll(readLabelRanges);
 		errorMessage = labelRangesOperator.getErrorMessage();
 		succeeded = labelRangesOperator.succeeded();
-
-		eventBus.post(new ReadEvent(succeeded, errorMessage));
+		final boolean outlineReadSucceeded = labelRangesOperator.outlineReadSucceeded();
+		outline.clear();
+		if (outlineReadSucceeded) {
+			outline.addAll(labelRangesOperator.getOutline().get().getChildren());
+		}
+		lastReadEvent = new ReadEvent(succeeded, errorMessage, outlineReadSucceeded,
+				labelRangesOperator.getOutlineErrorMessage());
+		eventBus.post(lastReadEvent);
 	}
 
-	public void setModel(LabelRangesByIndex labelRangesByIndex) {
-		this.model = requireNonNull(labelRangesByIndex);
+	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
+		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
+	}
+
+	public void setOutline(Outline outline) {
+		this.outline = outline;
 	}
 }

@@ -38,11 +38,8 @@ public class SaverRunnable implements Callable<Void> {
 		final Path inputPath = job.getInputPath();
 		final Path outputPath = job.getOutputPath();
 		labelRangesOperator.setOverwrite(job.getOverwrite());
-//		try {
-		labelRangesOperator.saveLabelRanges(inputPath, outputPath, labelRangesByIndex);
-//		} catch (@SuppressWarnings("unused") InterruptedException e) {
-//			/** Nothing. */
-//		}
+		labelRangesOperator.setOutline(job.getOutline().orElse(null));
+		labelRangesOperator.save(inputPath, outputPath, labelRangesByIndex);
 		final String errorMessage = labelRangesOperator.getErrorMessage();
 		if (!errorMessage.isEmpty()) {
 			throw new SaveFailedException(errorMessage);

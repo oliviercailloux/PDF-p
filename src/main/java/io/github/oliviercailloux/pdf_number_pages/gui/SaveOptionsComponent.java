@@ -17,7 +17,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
@@ -30,6 +29,7 @@ import io.github.oliviercailloux.pdf_number_pages.services.saver.OutputPathChang
 import io.github.oliviercailloux.pdf_number_pages.services.saver.OverwriteChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaverFinishedEvent;
+import io.github.oliviercailloux.pdf_number_pages.services.saver.StartedSavingEvent;
 
 public class SaveOptionsComponent {
 
@@ -45,8 +45,6 @@ public class SaveOptionsComponent {
 	Button autoSaveButton;
 
 	AutoSaver autoSaver;
-
-	final EventBus eventBus = new EventBus(SaveOptionsComponent.class.getCanonicalName());
 
 	Button overwriteButton;
 
@@ -131,22 +129,19 @@ public class SaveOptionsComponent {
 
 	@Subscribe
 	public void inputPathChanged(@SuppressWarnings("unused") InputPathChanged event) {
-		label.setText("Reading…");
-		label.requestLayout();
-		label.setForeground(null);
+		setReadText("Reading…", true);
 	}
 
 	@Subscribe
 	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
 		assert Display.getCurrent() != null;
-		setSaveError("");
 		setSaveButtonsEnabled();
 	}
 
 	@Subscribe
 	public void outputPathChanged(@SuppressWarnings("unused") OutputPathChanged event) {
 		assert Display.getCurrent() != null;
-		setSaveError("");
+		setSaveText("", true);
 	}
 
 	@Subscribe
@@ -159,16 +154,17 @@ public class SaveOptionsComponent {
 	@Subscribe
 	public void readEvent(ReadEvent event) {
 		LOGGER.info("Read event: {}.", event);
-		setReadError(event.getErrorMessage());
-	}
-
-	public void register(Object listener) {
-		eventBus.register(requireNonNull(listener));
+		setReadText(event.getErrorMessage(), event.succeeded());
 	}
 
 	@Subscribe
 	public void saverFinished(SaverFinishedEvent event) {
-		setSaveError(event.getErrorMessage());
+		setSaveText(event.getErrorMessage(), event.getErrorMessage().isEmpty());
+	}
+
+	@Subscribe
+	public void saverStarted(@SuppressWarnings("unused") StartedSavingEvent event) {
+		setSaveText("Saving…", true);
 	}
 
 	public void setAutoSaver(AutoSaver autoSaver) {
@@ -190,28 +186,42 @@ public class SaveOptionsComponent {
 	}
 
 	/**
-	 * @param error
-	 *            empty string for no error.
+	 * @param text
+	 *            empty string for no text.
+	 * @param isAllRight
+	 *            <code>false</code> for an error.
 	 */
-	private void setReadError(String error) {
-		requireNonNull(error);
-		label.setText(error);
+	private void setReadText(String text, boolean isAllRight) {
+		LOGGER.debug("Setting text to {}.", text);
+		requireNonNull(text);
+		label.setText(text);
+		if (isAllRight) {
+			label.setForeground(null);
+		} else {
+			Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+			label.setForeground(red);
+			LOGGER.info("Error when reading: {}.", text);
+		}
 		label.requestLayout();
-		Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-		label.setForeground(red);
-		LOGGER.info("Error when reading: {}.", error);
 	}
 
 	/**
-	 * @param error
-	 *            empty string for no error.
+	 * @param text
+	 *            empty string for no text.
+	 * @param isAllRight
+	 *            <code>false</code> for an error.
 	 */
-	private void setSaveError(String error) {
-		requireNonNull(error);
-		label.setText(error);
+	private void setSaveText(String text, boolean isAllRight) {
+		LOGGER.debug("Setting text to {}.", text);
+		requireNonNull(text);
+		label.setText(text);
+		if (isAllRight) {
+			label.setForeground(null);
+		} else {
+			Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+			label.setForeground(red);
+			LOGGER.info("Error when saving: {}.", text);
+		}
 		label.requestLayout();
-		Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-		label.setForeground(red);
-		LOGGER.debug("Error when saving: {}.", error);
 	}
 }

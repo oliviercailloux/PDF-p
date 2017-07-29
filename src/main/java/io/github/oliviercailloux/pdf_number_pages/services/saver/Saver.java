@@ -18,8 +18,10 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
+import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 
 /**
@@ -36,10 +38,12 @@ public class Saver {
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(Saver.class);
 
-	private final ListeningExecutorService executor = MoreExecutors
-			.listeningDecorator(Executors.newSingleThreadExecutor());
+	private final ListeningExecutorService executor = MoreExecutors.listeningDecorator(
+			Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Saver").build()));
 
 	private LabelRangesByIndex labelRangesByIndex;
+
+	private Outline outline;
 
 	/**
 	 * Not <code>null</code>, not empty.
@@ -96,6 +100,10 @@ public class Saver {
 		return Optional.ofNullable(submittedJob);
 	}
 
+	public Optional<Outline> getOutline() {
+		return Optional.ofNullable(outline);
+	}
+
 	public Path getOutputPath() {
 		return outputPath;
 	}
@@ -126,14 +134,19 @@ public class Saver {
 		LOGGER.debug("Attempting save.");
 		assert !labelRangesByIndex.isEmpty();
 		final Path inputPath = reader.getInputPath();
-		final SaveJob saveJob = new SaveJob(labelRangesByIndex, inputPath, outputPath, overwrite);
+		final SaveJob saveJob = new SaveJob(labelRangesByIndex, outline, inputPath, outputPath, overwrite);
 		submittedJob = executor.submit(new SaverRunnable(saveJob));
 		submittedJobCallback = new SaverRunnableCallback(this, saveJob);
 		Futures.addCallback(submittedJob, submittedJobCallback, savedEventsFiringExecutor);
+		eventBus.post(new StartedSavingEvent());
 	}
 
 	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
 		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
+	}
+
+	public void setOutline(Outline outline) {
+		this.outline = outline;
 	}
 
 	public void setOutputPath(Path outputPath) {

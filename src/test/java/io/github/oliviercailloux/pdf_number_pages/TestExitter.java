@@ -29,6 +29,7 @@ public class TestExitter {
 		final PrudentActor exitter = new PrudentActor();
 		exitter.setShell(shell);
 		exitter.waitForSave();
+		exitter.setAction(() -> shell.dispose());
 		display.timerExec(1 * 1000, () -> {
 			final SaveJob saveJob = Mockito.mock(SaveJob.class);
 			exitter.saverHasFinishedEvent(new SaverFinishedEvent(saveJob, ""));

@@ -3,6 +3,8 @@ package io.github.oliviercailloux.pdf_number_pages.services.saver;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +13,7 @@ import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.services.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 
@@ -28,6 +31,8 @@ public class AutoSaver {
 	private boolean autoSave;
 
 	private LabelRangesByIndex labelRangesByIndex;
+
+	private Outline outline;
 
 	private Reader reader;
 
@@ -47,6 +52,10 @@ public class AutoSaver {
 
 	public LabelRangesByIndex getLabelRangesByIndex() {
 		return labelRangesByIndex;
+	}
+
+	public Optional<Outline> getOutline() {
+		return Optional.ofNullable(outline);
 	}
 
 	public Reader getReader() {
@@ -97,6 +106,13 @@ public class AutoSaver {
 	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
 		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
 		labelRangesByIndex.register(this);
+	}
+
+	public void setOutline(Outline outline) {
+		this.outline = outline;
+		if (this.outline != null) {
+			this.outline.register(this);
+		}
 	}
 
 	public void setReader(Reader reader) {

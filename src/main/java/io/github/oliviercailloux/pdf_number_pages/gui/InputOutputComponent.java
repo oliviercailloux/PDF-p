@@ -19,7 +19,6 @@ import org.eclipse.swt.widgets.Label;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.services.InputPathChanged;
@@ -46,7 +45,7 @@ public class InputOutputComponent {
 
 	private Label destText;
 
-	private final EventBus eventBus = new EventBus(InputOutputComponent.class.getCanonicalName());
+	private final Color NOT_SAVED_COLOR;
 
 	private Reader reader;
 
@@ -64,6 +63,7 @@ public class InputOutputComponent {
 		destText = null;
 		savedStatusComputer = null;
 		saver = null;
+		NOT_SAVED_COLOR = Display.getCurrent().getSystemColor(SWT.COLOR_MAGENTA);
 	}
 
 	public void addInputPathButtonAction(Runnable action) {
@@ -76,7 +76,7 @@ public class InputOutputComponent {
 	}
 
 	public void askForInputFile() {
-		final FileDialog fileDialog = new FileDialog(composite.getShell());
+		final FileDialog fileDialog = new FileDialog(composite.getShell(), SWT.OPEN);
 		fileDialog.setText("Select file to open");
 		fileDialog.setFilterExtensions(new String[] { "*.pdf" });
 		final String toOpen = fileDialog.open();
@@ -86,9 +86,10 @@ public class InputOutputComponent {
 	}
 
 	public void askForOutputFile() {
-		final FileDialog fileDialog = new FileDialog(composite.getShell());
+		final FileDialog fileDialog = new FileDialog(composite.getShell(), SWT.SAVE);
 		fileDialog.setText("Select file to open");
 		fileDialog.setFilterExtensions(new String[] { "*.pdf" });
+		/** TODO here we could use setOverwrite. */
 		final String toOpen = fileDialog.open();
 		if (toOpen != null) {
 			saver.setOutputPath(Paths.get(toOpen));
@@ -148,19 +149,11 @@ public class InputOutputComponent {
 		setOutputText(event.getOutputPath());
 	}
 
-	public void register(Object listener) {
-		eventBus.register(requireNonNull(listener));
-	}
-
 	@Subscribe
 	public void savedStatusChanged(SavedStatusChanged event) {
 		LOGGER.info("Saved status changed: {}.", event);
-		if (!event.isSaved() || saver.isRunning()) {
-			Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-			destText.setForeground(red);
-		} else {
-			destText.setForeground(null);
-		}
+		final boolean saved = event.isSaved() && !saver.isRunning();
+		setSavedStatus(saved);
 	}
 
 	public void setReader(Reader reader) {
@@ -171,8 +164,7 @@ public class InputOutputComponent {
 		if (saved) {
 			destText.setForeground(null);
 		} else {
-			Color red = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-			destText.setForeground(red);
+			destText.setForeground(NOT_SAVED_COLOR);
 		}
 	}
 

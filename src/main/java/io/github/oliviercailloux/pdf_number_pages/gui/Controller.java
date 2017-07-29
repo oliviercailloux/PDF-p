@@ -18,11 +18,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component.LabelRangesComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
+import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
+import io.github.oliviercailloux.pdf_number_pages.services.ReadEvent;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
@@ -49,6 +51,10 @@ public class Controller {
 
 	private final LabelRangesComponent labelRangesComponent;
 
+	private final Outline outline;
+
+	private final OutlineComponent outlineComponent;
+
 	private Reader reader;
 
 	private final SavedStatusComputer savedStatusComputer;
@@ -56,8 +62,6 @@ public class Controller {
 	private final SaveOptionsComponent saveOptionsComponent;
 
 	Display display;
-
-	final EventBus eventBus = new EventBus(Controller.class.getCanonicalName());
 
 	final PrudentActor prudentActor;
 
@@ -67,14 +71,17 @@ public class Controller {
 
 	public Controller() {
 		labelRangesByIndex = new LabelRangesByIndex();
+		outline = new Outline();
 
 		reader = new Reader();
-		reader.setModel(labelRangesByIndex);
+		reader.setLabelRangesByIndex(labelRangesByIndex);
+		reader.setOutline(outline);
 
 		saver = new Saver();
 		saver.setLabelRangesByIndex(labelRangesByIndex);
 		saver.setReader(reader);
 		saver.setSavedEventsFiringExecutor((r) -> display.asyncExec(r));
+		saver.setOutline(null);
 
 		autoSaver = new AutoSaver();
 		autoSaver.setSaver(saver);
@@ -98,9 +105,13 @@ public class Controller {
 		saveOptionsComponent.setLabelRangesByIndex(labelRangesByIndex);
 		saveOptionsComponent.setSaver(saver);
 		saveOptionsComponent.setAutoSaver(autoSaver);
+		outlineComponent = new OutlineComponent();
+		outlineComponent.setOutline(outline);
+		outlineComponent.setReader(reader);
 
 		prudentActor = new PrudentActor();
 		prudentActor.setSaver(saver);
+		prudentActor.setReader(reader);
 		prudentActor.setSavedStatusComputer(savedStatusComputer);
 		prudentActor.setLabelRangesByIndex(labelRangesByIndex);
 
@@ -108,6 +119,7 @@ public class Controller {
 		register(inputOutputComponent);
 		register(saveOptionsComponent);
 		register(labelRangesComponent);
+//		register(outlineComponent);
 		register(prudentActor);
 	}
 
@@ -140,10 +152,10 @@ public class Controller {
 
 	public void createLabelsAndOutline() {
 		createLabels();
-		final PDDocumentOutline outline = new PDDocumentOutline();
+		final PDDocumentOutline pdoutline = new PDDocumentOutline();
 		{
 			final PDOutlineItem item = new PDOutlineItem();
-			outline.addLast(item);
+			pdoutline.addLast(item);
 			item.setTitle("Preface to the Second Edition");
 			final PDPageFitWidthDestination dest = new PDPageFitWidthDestination();
 			dest.setPageNumber(6);
@@ -192,8 +204,10 @@ public class Controller {
 		shell.setText("Pdf number pages");
 
 		labelRangesComponent.init(shell);
+//		outlineComponent.init(shell);
 		saveOptionsComponent.init(shell);
 		inputOutputComponent.init(shell);
+
 		prudentActor.setShell(shell);
 		inputOutputComponent.addInputPathButtonAction(() -> {
 			prudentActor.setAction(() -> inputOutputComponent.askForInputFile());
@@ -217,26 +231,47 @@ public class Controller {
 	}
 
 	public void proceed() {
+		/**
+		 * FIXME Slow copmputer. Start GUI, immediately close. The close event is
+		 * processed before the setOverwrite. The setoverwrite is processed just before
+		 * closing, as part of the close, and fails as there’s no display any more.
+		 */
 		LOGGER.info("Start init.");
 		initGui();
-		display.asyncExec(
-				() -> reader.setInputPath(Paths.get("/home/olivier/Biblio/Roman - Advanced Linear Algebra.pdf")));
+		display.asyncExec(() -> reader.setInputPath(Paths
+				.get("/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Gen Lib.pdf")));
 		display.asyncExec(() -> {
-			LOGGER.debug("Setting overwrite.");
-			saver.setOverwrite(true);
+			LOGGER.debug("Setting auto save.");
+			autoSaver.setAutoSave(true);
 		});
 		LOGGER.info("Finished init.");
 		fireView();
 	}
 
+	@Subscribe
+	public void readEvent(ReadEvent event) {
+		LOGGER.info("Received: {}.", event);
+		if (event.outlineReadSucceeded()) {
+			if (outline.isEmpty()) {
+				saver.setOutline(null);
+			} else {
+				/**
+				 * TODO save outline when correctly read (but will overwrite previous outline
+				 * which might have more information, such as precise locations within pages).
+				 */
+				saver.setOutline(null);
+			}
+		} else {
+			saver.setOutline(null);
+		}
+	}
+
 	public void register(Object listener) {
-		eventBus.register(requireNonNull(listener));
-		inputOutputComponent.register(listener);
-		saveOptionsComponent.register(listener);
-		saver.register(listener);
+		labelRangesByIndex.register(listener);
+		outline.register(listener);
+		saver.register(requireNonNull(listener));
 		autoSaver.register(listener);
 		reader.register(listener);
-		labelRangesByIndex.register(listener);
 		savedStatusComputer.register(listener);
 	}
 

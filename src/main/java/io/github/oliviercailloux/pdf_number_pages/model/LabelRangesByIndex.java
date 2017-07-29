@@ -74,6 +74,7 @@ public class LabelRangesByIndex extends ForwardingNavigableMap<Integer, PDPageLa
 	}
 
 	public void move(int oldIndex, int newIndex) {
+		assert oldIndex != 0 : "Move from first page not supported";
 		if (oldIndex == newIndex) {
 			return;
 		}
