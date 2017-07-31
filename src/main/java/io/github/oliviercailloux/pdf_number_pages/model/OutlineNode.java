@@ -18,6 +18,24 @@ public class OutlineNode {
 		return new OutlineNode();
 	}
 
+	public static OutlineNode newOutline(PdfBookmark bookmark) {
+		requireNonNull(bookmark);
+		final OutlineNode outline = new OutlineNode();
+		outline.setBookmark(bookmark);
+		return outline;
+	}
+
+	public static OutlineNode newOutline(PdfBookmark bookmark, Iterable<OutlineNode> children) {
+		requireNonNull(bookmark);
+		requireNonNull(children);
+		final OutlineNode outline = new OutlineNode();
+		outline.setBookmark(bookmark);
+		for (OutlineNode child : children) {
+			outline.addAsLastChild(child);
+		}
+		return outline;
+	}
+
 	/**
 	 * May be <code>null</code> (to represent an empty tree).
 	 */

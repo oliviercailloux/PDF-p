@@ -2,6 +2,9 @@ package io.github.oliviercailloux.pdf_number_pages.model;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -9,6 +12,9 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 public class Outline {
+	@SuppressWarnings("unused")
+	private static final Logger LOGGER = LoggerFactory.getLogger(Outline.class);
+
 	private List<OutlineNode> children = Lists.newLinkedList();
 
 	private EventBus eventBus = new EventBus();
@@ -32,6 +38,7 @@ public class Outline {
 			}
 		}
 		if (addedSome) {
+			LOGGER.debug("Posting added.");
 			eventBus.post(ModelChanged.newModelChangedAll());
 		}
 		return addedSome;

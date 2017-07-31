@@ -11,11 +11,12 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,15 +38,17 @@ import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
  */
 public class InputOutputComponent {
 	@SuppressWarnings("unused")
-	private static final Logger LOGGER = LoggerFactory.getLogger(InputOutputComponent.class);
+	static final Logger LOGGER = LoggerFactory.getLogger(InputOutputComponent.class);
 
 	private Composite composite;
 
 	private Button destButton;
 
-	private Label destText;
+	private Link destText;
 
 	private final Color NOT_SAVED_COLOR;
+
+	private final SelectionAdapter pdfOpener;
 
 	private Reader reader;
 
@@ -55,7 +58,7 @@ public class InputOutputComponent {
 
 	private Button sourceButton;
 
-	Label sourceText;
+	Link sourceText;
 
 	public InputOutputComponent() {
 		sourceButton = null;
@@ -63,7 +66,17 @@ public class InputOutputComponent {
 		destText = null;
 		savedStatusComputer = null;
 		saver = null;
-		NOT_SAVED_COLOR = Display.getCurrent().getSystemColor(SWT.COLOR_MAGENTA);
+		NOT_SAVED_COLOR = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN);
+		pdfOpener = new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				final Program prg = Program.findProgram("pdf");
+				LOGGER.info("Found: {}.", prg);
+				if (prg != null) {
+					prg.execute(e.text);
+				}
+			}
+		};
 	}
 
 	public void addInputPathButtonAction(Runnable action) {
@@ -116,22 +129,24 @@ public class InputOutputComponent {
 		sourceButton = new Button(composite, SWT.NONE);
 		sourceButton.setText("Source");
 		sourceButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-		sourceText = new Label(composite, SWT.NONE);
+		sourceText = new Link(composite, SWT.NONE);
 		sourceText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		sourceText.addSelectionListener(pdfOpener);
 		setInputText(reader.getInputPath());
 
 		destButton = new Button(composite, SWT.NONE);
 		destButton.setText("Dest");
 		destButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-		destText = new Label(composite, SWT.NONE);
-		destText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		setOutputText(saver.getOutputPath());
 		destButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				askForOutputFile();
 			}
 		});
+		destText = new Link(composite, SWT.NONE);
+		destText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		destText.addSelectionListener(pdfOpener);
+		setOutputText(saver.getOutputPath());
 
 		savedStatusChanged(new SavedStatusChanged(savedStatusComputer.isSaved()));
 	}
@@ -162,9 +177,9 @@ public class InputOutputComponent {
 
 	public void setSavedStatus(boolean saved) {
 		if (saved) {
-			destText.setForeground(null);
+			destText.setLinkForeground(null);
 		} else {
-			destText.setForeground(NOT_SAVED_COLOR);
+			destText.setLinkForeground(NOT_SAVED_COLOR);
 		}
 	}
 
@@ -178,12 +193,14 @@ public class InputOutputComponent {
 
 	void setInputText(Path inputPath) {
 		final String text = inputPath.toString();
-		sourceText.setText(text);
+		sourceText.setText("<A>" + text + "</A>");
+		sourceText.requestLayout();
 	}
 
 	void setOutputText(Path outputPath) {
 		final String text = outputPath.toString();
-		destText.setText(text);
+		destText.setText("<A>" + text + "</A>");
+		destText.requestLayout();
 	}
 
 }

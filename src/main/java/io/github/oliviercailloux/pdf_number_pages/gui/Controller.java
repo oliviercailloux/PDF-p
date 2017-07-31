@@ -2,6 +2,8 @@ package io.github.oliviercailloux.pdf_number_pages.gui;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
 
 import org.apache.pdfbox.pdmodel.common.PDPageLabelRange;
@@ -9,21 +11,28 @@ import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPa
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component.LabelRangesComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
+import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
+import io.github.oliviercailloux.pdf_number_pages.model.PdfBookmark;
 import io.github.oliviercailloux.pdf_number_pages.services.ReadEvent;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
@@ -31,6 +40,8 @@ import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
 public class Controller {
+	private static final String APP_NAME = "PDF Number pages";
+
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
@@ -44,6 +55,8 @@ public class Controller {
 	}
 
 	private AutoSaver autoSaver;
+
+	private Image icon;
 
 	private final InputOutputComponent inputOutputComponent;
 
@@ -93,6 +106,7 @@ public class Controller {
 		savedStatusComputer.setReader(reader);
 		savedStatusComputer.setSaver(saver);
 
+		Display.setAppName(APP_NAME);
 		display = Display.getDefault();
 
 		labelRangesComponent = new LabelRangesComponent();
@@ -119,8 +133,9 @@ public class Controller {
 		register(inputOutputComponent);
 		register(saveOptionsComponent);
 		register(labelRangesComponent);
-//		register(outlineComponent);
+		register(outlineComponent);
 		register(prudentActor);
+		icon = null;
 	}
 
 	public void createLabels() {
@@ -199,12 +214,22 @@ public class Controller {
 	}
 
 	public void initGui() {
+		try (InputStream inputStream = getClass().getResourceAsStream("icon-512-blue.png")) {
+			icon = new Image(display, inputStream);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+
 		shell = new Shell(display, SWT.SHELL_TRIM);
 		shell.setLayout(new GridLayout(1, false));
-		shell.setText("Pdf number pages");
+		shell.setText(APP_NAME);
+		shell.setImage(icon);
 
-		labelRangesComponent.init(shell);
-//		outlineComponent.init(shell);
+		final SashForm sash = new SashForm(shell, SWT.VERTICAL);
+		sash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+		labelRangesComponent.init(sash);
+		outlineComponent.init(sash);
 		saveOptionsComponent.init(shell);
 		inputOutputComponent.init(shell);
 
@@ -217,11 +242,18 @@ public class Controller {
 
 		display.disposeExec(() -> {
 			saver.close();
+			icon.dispose();
 		});
 
 		shell.addShellListener(new ShellAdapter() {
 			@Override
 			public void shellClosed(ShellEvent event) {
+				LOGGER.info("Shell menu: {}.", shell.getMenuBar());
+				LOGGER.info("Shell menu: {}.", shell.getMenu());
+				final Menu menu = display.getMenuBar();
+				LOGGER.info("App menu: {}.", menu);
+				final Menu smenu = display.getSystemMenu();
+				LOGGER.info("System menu: {}.", smenu);
 				event.doit = false;
 				prudentActor.setAction(() -> display.close());
 				prudentActor.setActionQuestion("Quit anyway?");
@@ -241,8 +273,18 @@ public class Controller {
 		display.asyncExec(() -> reader.setInputPath(Paths
 				.get("/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Gen Lib.pdf")));
 		display.asyncExec(() -> {
-			LOGGER.debug("Setting auto save.");
-			autoSaver.setAutoSave(true);
+			if (!labelRangesByIndex.isEmpty()) {
+				LOGGER.debug("Setting auto save.");
+				autoSaver.setAutoSave(true);
+			}
+		});
+		final OutlineNode child11 = OutlineNode.newOutline(new PdfBookmark("1.1", 11));
+		final OutlineNode child2 = OutlineNode.newOutline(new PdfBookmark("2", 2));
+		final OutlineNode child1 = OutlineNode.newOutline(new PdfBookmark("1", 1), ImmutableList.of(child11));
+		final ImmutableList<OutlineNode> children = ImmutableList.of(child1, child2);
+		display.asyncExec(() -> {
+			outline.clear();
+			outline.addAll(children);
 		});
 		LOGGER.info("Finished init.");
 		fireView();
