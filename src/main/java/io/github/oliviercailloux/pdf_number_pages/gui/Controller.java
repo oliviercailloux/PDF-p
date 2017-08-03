@@ -18,7 +18,6 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component.LabelRangesComponent;
+import io.github.oliviercailloux.pdf_number_pages.gui.outline_component.OutlineComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
@@ -248,12 +248,6 @@ public class Controller {
 		shell.addShellListener(new ShellAdapter() {
 			@Override
 			public void shellClosed(ShellEvent event) {
-				LOGGER.info("Shell menu: {}.", shell.getMenuBar());
-				LOGGER.info("Shell menu: {}.", shell.getMenu());
-				final Menu menu = display.getMenuBar();
-				LOGGER.info("App menu: {}.", menu);
-				final Menu smenu = display.getSystemMenu();
-				LOGGER.info("System menu: {}.", smenu);
 				event.doit = false;
 				prudentActor.setAction(() -> display.close());
 				prudentActor.setActionQuestion("Quit anyway?");

@@ -47,6 +47,7 @@ public class OutlineNode {
 
 	private OutlineNode() {
 		bookmark = null;
+
 	}
 
 	public void addAsLastChild(OutlineNode childOutline) {

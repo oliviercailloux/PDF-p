@@ -117,8 +117,8 @@ public class LabelRangesComponent {
 	public void setKeyListenerEnabled(boolean enabled) {
 		if (enabled) {
 			/**
-			 * We have to remove it just in case it was already registered, to
-			 * avoid double registration.
+			 * We have to remove it just in case it was already registered, to avoid double
+			 * registration.
 			 */
 			table.removeKeyListener(tableKeyListener);
 			table.addKeyListener(tableKeyListener);
@@ -177,24 +177,25 @@ public class LabelRangesComponent {
 		});
 		{
 			EditingSupportIndex editingSupport = new EditingSupportIndex(viewer);
-			JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_INDEX_IDX), editingSupport);
+			JFace.addTextTableViewerColumn(viewer, table.getColumn(COL_INDEX_IDX), editingSupport);
 			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
 		}
 		{
 			EditingSupportPrefix editingSupport = new EditingSupportPrefix(viewer);
-			JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_PREFIX_IDX), editingSupport);
+			JFace.addTextTableViewerColumn(viewer, table.getColumn(COL_PREFIX_IDX), editingSupport);
 			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
 		}
 		{
 			EditingSupportStyle editingSupport = new EditingSupportStyle(viewer);
-			JFace.getComboBoxTableViewerColumn(viewer, table.getColumn(COL_STYLE_IDX), editingSupport);
+			JFace.addComboBoxTableViewerColumn(viewer, table.getColumn(COL_STYLE_IDX), editingSupport);
 			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
 		}
 		{
 			EditingSupportStart editingSupport = new EditingSupportStart(viewer);
-			JFace.getTextTableViewerColumn(viewer, table.getColumn(COL_START_IDX), editingSupport);
+			JFace.addTextTableViewerColumn(viewer, table.getColumn(COL_START_IDX), editingSupport);
 			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
 		}
+		viewer.setInput(labelRangesByIndex.keySet());
 
 		tableKeyListener = new KeyAdapter() {
 			@Override
