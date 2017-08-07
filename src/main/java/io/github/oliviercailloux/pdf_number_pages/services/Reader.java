@@ -75,10 +75,10 @@ public class Reader {
 		}
 		this.inputPath = requireNonNull(inputPath);
 		final InputPathChanged event = new InputPathChanged(this.inputPath);
-		LOGGER.info("Firing: {}.", event);
+		LOGGER.debug("Firing: {}.", event);
 		eventBus.post(event);
 
-		LOGGER.info("Input path changed, reading.");
+		LOGGER.debug("Input path changed, reading.");
 		final String errorMessage;
 		final boolean succeeded;
 		labelRangesByIndex.clear();
@@ -89,7 +89,12 @@ public class Reader {
 		final boolean outlineReadSucceeded = labelRangesOperator.outlineReadSucceeded();
 		outline.clear();
 		if (outlineReadSucceeded) {
-			outline.addAll(labelRangesOperator.getOutline().get().getChildren());
+			final Outline readOutline = labelRangesOperator.getOutline().get();
+			/**
+			 * FIXME If we want to keep a copy in the reader, we have to deep copy it,
+			 * because we can’t have the right parent pointer otherwise.
+			 */
+			outline.addCopies(readOutline.getChildren());
 		}
 		lastReadEvent = new ReadEvent(succeeded, errorMessage, outlineReadSucceeded,
 				labelRangesOperator.getOutlineErrorMessage());

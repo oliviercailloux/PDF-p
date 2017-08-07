@@ -206,7 +206,7 @@ public class LabelRangesOperator {
 		final Iterable<PDOutlineItem> children = pdOutline.children();
 		try {
 			for (PDOutlineItem child : children) {
-				outline.add(readOutline(child));
+				outline.addAsLastChild(readOutline(child));
 			}
 			lastOutlineReadSucceeded = true;
 		} catch (@SuppressWarnings("unused") ComplexOutlineException e) {
@@ -224,8 +224,7 @@ public class LabelRangesOperator {
 		final int pageNb = current.getPages().indexOf(dest);
 		final String title = pdOutline.getTitle();
 		final PdfBookmark bookmark = new PdfBookmark(title, pageNb);
-		final OutlineNode readOutline = OutlineNode.newEmptyOutline();
-		readOutline.setBookmark(bookmark);
+		final OutlineNode readOutline = OutlineNode.newOutline(bookmark);
 		final Iterable<PDOutlineItem> children = pdOutline.children();
 		for (PDOutlineItem child : children) {
 			readOutline.addAsLastChild(readOutline(child));

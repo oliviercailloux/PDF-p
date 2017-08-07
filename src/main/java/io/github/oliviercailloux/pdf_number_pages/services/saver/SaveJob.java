@@ -40,6 +40,7 @@ public class SaveJob {
 		this.inputPath = requireNonNull(inputPath);
 		this.outputPath = requireNonNull(outputPath);
 		this.overwrite = overwrite;
+		LOGGER.debug("Set job: {}.", this);
 	}
 
 	public Path getInputPath() {

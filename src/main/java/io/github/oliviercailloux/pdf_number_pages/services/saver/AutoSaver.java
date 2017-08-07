@@ -68,12 +68,13 @@ public class AutoSaver {
 
 	@Subscribe
 	public void inputPathChanged(@SuppressWarnings("unused") InputPathChanged event) {
-		LOGGER.info("Input path changed, disabling auto save.");
+		LOGGER.debug("Input path changed, disabling auto save.");
 		setAutoSave(false);
 	}
 
 	@Subscribe
 	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
+		LOGGER.debug("Model changed, saving perhaps.");
 		savePerhaps();
 	}
 

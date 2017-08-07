@@ -18,6 +18,7 @@ public class EditingSupportStart extends IntEditingSupport<Integer> {
 
 	public EditingSupportStart(ColumnViewer viewer) {
 		super(viewer, Integer.class);
+		setIntegerValidator(intValue -> intValue <= 0 ? "Must be strictly positive." : null);
 		labelRangesByIndex = null;
 	}
 

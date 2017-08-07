@@ -153,7 +153,7 @@ public class InputOutputComponent {
 
 	@Subscribe
 	public void inputPathChanged(InputPathChanged event) {
-		LOGGER.info("Got: {}.", event);
+		LOGGER.debug("Got: {}.", event);
 		assert Display.getCurrent() != null;
 		setInputText(event.getInputPath());
 	}
@@ -166,7 +166,7 @@ public class InputOutputComponent {
 
 	@Subscribe
 	public void savedStatusChanged(SavedStatusChanged event) {
-		LOGGER.info("Saved status changed: {}.", event);
+		LOGGER.debug("Saved status changed: {}.", event);
 		final boolean saved = event.isSaved() && !saver.isRunning();
 		setSavedStatus(saved);
 	}

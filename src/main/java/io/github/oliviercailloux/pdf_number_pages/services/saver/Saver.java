@@ -146,6 +146,7 @@ public class Saver {
 	}
 
 	public void setOutline(Outline outline) {
+		LOGGER.debug("Setting outline: {}.", outline);
 		this.outline = outline;
 	}
 

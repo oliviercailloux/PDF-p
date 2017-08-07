@@ -8,7 +8,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 
-import io.github.oliviercailloux.pdf_number_pages.model.Outline;
+import io.github.oliviercailloux.pdf_number_pages.model.IOutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.PdfBookmark;
 
@@ -19,7 +19,7 @@ public class OutlineToPdf {
 		document = null;
 	}
 
-	public PDDocumentOutline asDocumentOutline(Outline outline) {
+	public PDDocumentOutline asDocumentOutline(IOutlineNode outline) {
 		final PDDocumentOutline pdDocumentOutline = new PDDocumentOutline();
 		final Iterable<OutlineNode> children = outline.getChildren();
 		for (OutlineNode child : children) {
@@ -35,7 +35,7 @@ public class OutlineToPdf {
 	 * @return the equivalent PDOutlineItem, not <code>null</code>.
 	 */
 	public PDOutlineItem asOutlineItem(OutlineNode outline) {
-		checkArgument(!outline.isEmpty());
+		checkArgument(outline.getBookmark().isPresent());
 		final PdfBookmark bookmark = outline.getBookmark().get();
 		final PDOutlineItem item = asOutlineItem(bookmark);
 		final Iterable<OutlineNode> children = outline.getChildren();

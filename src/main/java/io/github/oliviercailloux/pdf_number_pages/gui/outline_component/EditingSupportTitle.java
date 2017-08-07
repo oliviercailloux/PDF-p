@@ -13,36 +13,21 @@ import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.PdfBookmark;
-import io.github.oliviercailloux.swt_tools.IntEditingSupport;
+import io.github.oliviercailloux.swt_tools.TextEditingSupport;
 
-public class EditingSupportPage extends IntEditingSupport<OutlineNode> {
+public class EditingSupportTitle extends TextEditingSupport<OutlineNode> {
 
 	@SuppressWarnings("unused")
-	private static final Logger LOGGER = LoggerFactory.getLogger(EditingSupportPage.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EditingSupportTitle.class);
 
 	private LabelRangesByIndex labelRangesByIndex;
 
 	private Outline outline;
 
-	public EditingSupportPage(ColumnViewer viewer) {
+	public EditingSupportTitle(ColumnViewer viewer) {
 		super(viewer, OutlineNode.class);
-		/**
-		 * TODO what if page value bigger than number of pages? What if the constraint
-		 * is ok now but wrong later?
-		 */
-		setIntegerValidator(intValue -> intValue < 1 ? "Not a page." : null);
 		labelRangesByIndex = null;
 		outline = null;
-	}
-
-	@Override
-	public int getIntValue(OutlineNode element) {
-		assert element != null;
-		LOGGER.debug("Getting value for: {}.", element);
-		final Optional<PdfBookmark> bookmarkOpt = element.getBookmark();
-		checkState(bookmarkOpt.isPresent());
-		final PdfBookmark bookmark = bookmarkOpt.get();
-		return bookmark.getPhysicalPageNumber() + 1;
 	}
 
 	public LabelRangesByIndex getLabelRangesByIndex() {
@@ -54,13 +39,13 @@ public class EditingSupportPage extends IntEditingSupport<OutlineNode> {
 	}
 
 	@Override
-	public void setIntValue(OutlineNode element, int value) {
+	public String getValueTyped(OutlineNode element) {
 		assert element != null;
+		LOGGER.debug("Getting value for: {}.", element);
 		final Optional<PdfBookmark> bookmarkOpt = element.getBookmark();
 		checkState(bookmarkOpt.isPresent());
 		final PdfBookmark bookmark = bookmarkOpt.get();
-		element.setBookmark(new PdfBookmark(bookmark.getTitle(), value - 1));
-		LOGGER.info("Element set: {}.", element);
+		return bookmark.getTitle();
 	}
 
 	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
@@ -69,6 +54,15 @@ public class EditingSupportPage extends IntEditingSupport<OutlineNode> {
 
 	public void setOutline(Outline outline) {
 		this.outline = requireNonNull(outline);
+	}
+
+	@Override
+	public void setValueTyped(OutlineNode element, String value) {
+		assert element != null;
+		final Optional<PdfBookmark> bookmarkOpt = element.getBookmark();
+		checkState(bookmarkOpt.isPresent());
+		final PdfBookmark bookmark = bookmarkOpt.get();
+		element.setBookmark(new PdfBookmark(value, bookmark.getPhysicalPageNumber()));
 	}
 
 }

@@ -153,7 +153,7 @@ public class SaveOptionsComponent {
 
 	@Subscribe
 	public void readEvent(ReadEvent event) {
-		LOGGER.info("Read event: {}.", event);
+		LOGGER.debug("Read event: {}.", event);
 		setReadText(event.getErrorMessage(), event.succeeded());
 	}
 

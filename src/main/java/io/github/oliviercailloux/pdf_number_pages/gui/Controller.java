@@ -23,17 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.eventbus.Subscribe;
-
 import io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component.LabelRangesComponent;
 import io.github.oliviercailloux.pdf_number_pages.gui.outline_component.OutlineComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
-import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
-import io.github.oliviercailloux.pdf_number_pages.model.PdfBookmark;
-import io.github.oliviercailloux.pdf_number_pages.services.ReadEvent;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
@@ -94,12 +88,13 @@ public class Controller {
 		saver.setLabelRangesByIndex(labelRangesByIndex);
 		saver.setReader(reader);
 		saver.setSavedEventsFiringExecutor((r) -> display.asyncExec(r));
-		saver.setOutline(null);
+		saver.setOutline(outline);
 
 		autoSaver = new AutoSaver();
 		autoSaver.setSaver(saver);
 		autoSaver.setLabelRangesByIndex(labelRangesByIndex);
 		autoSaver.setReader(reader);
+		autoSaver.setOutline(outline);
 
 		savedStatusComputer = new SavedStatusComputer();
 		savedStatusComputer.setLabelRangesByIndex(labelRangesByIndex);
@@ -129,12 +124,6 @@ public class Controller {
 		prudentActor.setSavedStatusComputer(savedStatusComputer);
 		prudentActor.setLabelRangesByIndex(labelRangesByIndex);
 
-		register(this);
-		register(inputOutputComponent);
-		register(saveOptionsComponent);
-		register(labelRangesComponent);
-		register(outlineComponent);
-		register(prudentActor);
 		icon = null;
 	}
 
@@ -227,7 +216,6 @@ public class Controller {
 
 		final SashForm sash = new SashForm(shell, SWT.VERTICAL);
 		sash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
 		labelRangesComponent.init(sash);
 		outlineComponent.init(sash);
 		saveOptionsComponent.init(shell);
@@ -254,6 +242,13 @@ public class Controller {
 				prudentActor.actPrudently();
 			}
 		});
+
+		register(this);
+		register(inputOutputComponent);
+		register(saveOptionsComponent);
+		register(labelRangesComponent);
+		register(outlineComponent);
+		register(prudentActor);
 	}
 
 	public void proceed() {
@@ -269,37 +264,12 @@ public class Controller {
 		display.asyncExec(() -> {
 			if (!labelRangesByIndex.isEmpty()) {
 				LOGGER.debug("Setting auto save.");
+				saver.setOverwrite(true);
 				autoSaver.setAutoSave(true);
 			}
 		});
-		final OutlineNode child11 = OutlineNode.newOutline(new PdfBookmark("1.1", 11));
-		final OutlineNode child2 = OutlineNode.newOutline(new PdfBookmark("2", 2));
-		final OutlineNode child1 = OutlineNode.newOutline(new PdfBookmark("1", 1), ImmutableList.of(child11));
-		final ImmutableList<OutlineNode> children = ImmutableList.of(child1, child2);
-		display.asyncExec(() -> {
-			outline.clear();
-			outline.addAll(children);
-		});
 		LOGGER.info("Finished init.");
 		fireView();
-	}
-
-	@Subscribe
-	public void readEvent(ReadEvent event) {
-		LOGGER.info("Received: {}.", event);
-		if (event.outlineReadSucceeded()) {
-			if (outline.isEmpty()) {
-				saver.setOutline(null);
-			} else {
-				/**
-				 * TODO save outline when correctly read (but will overwrite previous outline
-				 * which might have more information, such as precise locations within pages).
-				 */
-				saver.setOutline(null);
-			}
-		} else {
-			saver.setOutline(null);
-		}
 	}
 
 	public void register(Object listener) {

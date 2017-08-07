@@ -33,7 +33,7 @@ public class SaverRunnable implements Callable<Void> {
 
 	@Override
 	public Void call() throws Exception {
-		LOGGER.info("Proceeding to save: {}.", job);
+		LOGGER.debug("Proceeding to save: {}.", job);
 		final LabelRangesByIndex labelRangesByIndex = job.getLabelRangesByIndex();
 		final Path inputPath = job.getInputPath();
 		final Path outputPath = job.getOutputPath();

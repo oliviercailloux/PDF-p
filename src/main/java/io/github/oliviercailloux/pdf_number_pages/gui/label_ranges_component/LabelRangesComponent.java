@@ -41,10 +41,6 @@ public class LabelRangesComponent {
 	private static final BiMap<Integer, String> COLUMN_NAMES = ImmutableBiMap.of(COL_INDEX_IDX, "Index", COL_PREFIX_IDX,
 			"Prefix", COL_STYLE_IDX, "Style", COL_START_IDX, "Start");
 
-	private static final char DEL_KEY = 0x7F;
-
-	private static final char PLUS_KEY = 0x2B;
-
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(LabelRangesComponent.class);
 
@@ -200,7 +196,7 @@ public class LabelRangesComponent {
 		tableKeyListener = new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if (e.character == DEL_KEY) {
+				if (e.character == SWT.DEL) {
 					final IStructuredSelection sel = viewer.getStructuredSelection();
 					for (Object o : sel.toList()) {
 						final int elementIndex = (Integer) o;
@@ -213,9 +209,10 @@ public class LabelRangesComponent {
 						}
 					}
 					e.doit = false;
-				} else if (e.character == PLUS_KEY) {
+				} else if (e.character == '+') {
 					LOGGER.debug("Pressed plus.");
 					if (!labelRangesByIndex.isEmpty()) {
+						/** TODO add just below the currently selected entries. */
 						labelRangesByIndex.add();
 						e.doit = false;
 					}
