@@ -1,0 +1,29 @@
+<assembly xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+ http://maven.apache.org/xsd/assembly-1.0.0.xsd">
+	<id>with-dependencies</id>
+	<formats>
+		<format>zip</format>
+	</formats>
+	<!-- <includeBaseDirectory>false</includeBaseDirectory> -->
+	<dependencySets>
+		<dependencySet>
+			<outputDirectory>/lib</outputDirectory>
+		</dependencySet>
+	</dependencySets>
+	<!-- <fileSets> -->
+	<!-- <fileSet> -->
+	<!-- <includes> -->
+	<!-- <include>src/main/java/*</include> -->
+	<!-- <include>src/main/resources/*</include> -->
+	<!-- <include>**</include> -->
+	<!-- </includes> -->
+	<!-- <directory>target/classes</directory> -->
+	<!-- <outputDirectory>/</outputDirectory> -->
+	<!-- <excludes> -->
+	<!-- <exclude>logback.xml</exclude> -->
+	<!-- <exclude>logback-test.xml</exclude> -->
+	<!-- </excludes> -->
+	<!-- </fileSet> -->
+	<!-- </fileSets> -->
+</assembly>
