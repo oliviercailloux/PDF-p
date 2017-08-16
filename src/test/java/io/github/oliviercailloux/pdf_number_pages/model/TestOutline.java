@@ -1,4 +1,4 @@
-package io.github.oliviercailloux.pdf_number_pages;
+package io.github.oliviercailloux.pdf_number_pages.model;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
