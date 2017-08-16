@@ -145,11 +145,22 @@
 	<build>
 		<plugins>
 			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.2</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>io.github.oliviercailloux.pdf_number_pages.gui.Controller</mainClass>
+							<addClasspath>true</addClasspath>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>3.0.0</version>
 				<configuration>
 					<descriptors>
-						<descriptor>build/No config.xml</descriptor>
 						<descriptor>build/Runnable.xml</descriptor>
 					</descriptors>
 				</configuration>
