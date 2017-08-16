@@ -2,12 +2,14 @@
 
 image:https://travis-ci.org/oliviercailloux/PDF-Number-pages.svg?branch=master["Build Status", link="https://travis-ci.org/oliviercailloux/PDF-Number-pages"]
 
+To start the application, just expand and double-click the main jar file. Alternatively, run: `java -jar pdf-number-pages.jar`. No installation is required.
+
 == Log
 In case of problems: here is how to change the log verbosity. (See Logback https://logback.qos.ch/manual/configuration.html[manual].)
 
 * Download a sample Logback configuration file https://github.com/oliviercailloux/PDF-Number-pages/blob/master/src/test/resources/logback-test.xml[here].
 * (Optional) Tweak it according to your needs, e.g. change the log levels.
-* Start the program with the system property `logback.configurationFile` pointing to the file.
+* Start the application with the system property `logback.configurationFile` pointing to the file.
 (You must give the full path, otherwise Logback considers the pointer as a classpath resource path.)
 ** Example: `java "-Dlogback.configurationFile=/home/…/logback.xml" -jar …/pdf-number-pages.jar`.
 * You may also add `"-Dlogback.statusListenerClass=ch.qos.logback.core.status.OnConsoleStatusListener"` to see where Logback looks for configuration instructions.

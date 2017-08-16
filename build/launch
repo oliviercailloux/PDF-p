@@ -1,2 +1,0 @@
-ROOT_DIR="$(dirname $0)"
-java -classpath "$ROOT_DIR/lib/*:$ROOT_DIR/conf" io.github.oliviercailloux.pdf_number_pages.gui.Controller $*
