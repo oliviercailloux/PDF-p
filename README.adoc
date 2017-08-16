@@ -1,5 +1,8 @@
 = PDF Number pages
 
+image:https://travis-ci.org/oliviercailloux/PDF-Number-pages.svg?branch=master["Build Status", link="https://travis-ci.org/oliviercailloux/PDF-Number-pages"]
+image:http://www.javadoc.io/badge/io.github.oliviercailloux/pdf-number-pages.svg["Javadocs", link="http://www.javadoc.io/doc/io.github.oliviercailloux/pdf-number-pages"]
+
 == Log
 In case of problems: here is how to change the log verbosity. (See Logback https://logback.qos.ch/manual/configuration.html[manual].)
 
