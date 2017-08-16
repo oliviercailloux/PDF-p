@@ -7,13 +7,16 @@
 	</formats>
 	<files>
 		<file>
+			<source>target/${project.artifactId}-${project.version}.jar</source>
+		</file>
+		<file>
 			<source>build/launch</source>
-			<outputDirectory>/</outputDirectory>
 			<fileMode>0740</fileMode>
 		</file>
 	</files>
 	<dependencySets>
 		<dependencySet>
+			<useProjectArtifact>false</useProjectArtifact>
 			<outputDirectory>lib</outputDirectory>
 		</dependencySet>
 	</dependencySets>

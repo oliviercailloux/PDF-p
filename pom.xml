@@ -152,6 +152,7 @@
 						<manifest>
 							<mainClass>io.github.oliviercailloux.pdf_number_pages.gui.Controller</mainClass>
 							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib</classpathPrefix>
 						</manifest>
 					</archive>
 				</configuration>
