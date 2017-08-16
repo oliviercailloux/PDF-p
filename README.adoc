@@ -1,5 +1,15 @@
 = PDF Number pages
 
+== Log
+In case of problems: here is how to change the log verbosity. (See Logback https://logback.qos.ch/manual/configuration.html[manual].)
+
+* Download a sample Logback configuration file https://github.com/oliviercailloux/PDF-Number-pages/blob/master/src/test/resources/logback-test.xml[here].
+* (Optional) Tweak it according to your needs, e.g. change the log levels.
+* Start the program with the system property `logback.configurationFile` pointing to the file.
+(You must give the full path, otherwise Logback considers the pointer as a classpath resource path.)
+** Example: `java "-Dlogback.configurationFile=/home/…/logback.xml" -jar …/pdf-number-pages.jar`.
+* You may also add `"-Dlogback.statusListenerClass=ch.qos.logback.core.status.OnConsoleStatusListener"` to see where Logback looks for configuration instructions.
+
 == Credits
 https://www.flaticon.com/free-icon/phonebook_129661[Icon] made by http://www.freepik.com/[Freepik] from http://www.flaticon.com[www.flaticon.com].
 
