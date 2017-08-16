@@ -1,4 +1,0 @@
-module load cplex
-# java -ea -Djava.library.path=.. -classpath "lib/*:conf" fr.ecp.lgi.disaggregation.exec.AssertFalse
-java -ea -Djava.library.path=.. -classpath "`dirname $0`/lib/*:`dirname $0`/conf" fr.ecp.lgi.subst.Various "$1" "$2" "$3" "$4" $*
-# java -ea -Djava.library.path=.. -classpath "lib/*:conf" fr.ecp.lgi.disaggregation.exec.TestIris "$1" "$2" "$3" "$4" $*

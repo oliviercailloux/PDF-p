@@ -1,5 +1,2 @@
-#export ILOG_LICENSE_FILE=~/cplex/access.ilm
-#CPLEX_PATH=~/cplex
-# -Djava.library.path=$CPLEX_PATH
 ROOT_DIR="$(dirname $0)"
-java -classpath "$ROOT_DIR/lib/*:$ROOT_DIR/conf" fr.ecp.lgi.shared_profiles.Timer $*
+java -classpath "$ROOT_DIR/lib/*:$ROOT_DIR/conf" io.github.oliviercailloux.pdf_number_pages.gui.Controller $*
