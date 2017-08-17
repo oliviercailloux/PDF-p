@@ -22,6 +22,7 @@
 			</activation>
 			<properties>
 				<swt.artifactId>org.eclipse.swt.gtk.linux.x86_64</swt.artifactId>
+				<env>linux</env>
 			</properties>
 		</profile>
 		<profile>
@@ -33,6 +34,7 @@
 			</activation>
 			<properties>
 				<swt.artifactId>org.eclipse.swt.cocoa.macosx.x86_64</swt.artifactId>
+				<env>mac</env>
 			</properties>
 		</profile>
 		<profile>
@@ -44,6 +46,7 @@
 			</activation>
 			<properties>
 				<swt.artifactId>org.eclipse.swt.win32.win32.x86_64</swt.artifactId>
+				<env>windows</env>
 			</properties>
 		</profile>
 	</profiles>
