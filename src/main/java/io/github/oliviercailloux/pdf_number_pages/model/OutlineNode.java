@@ -33,7 +33,8 @@ public class OutlineNode implements IOutlineNode {
 		requireNonNull(source);
 		final OutlineNode dest = new OutlineNode();
 		dest.bookmark = source.bookmark;
-		for (OutlineNode child : dest.getChildren()) {
+		for (OutlineNode child : source.getChildren()) {
+			LOGGER.debug("Adding to {}, {} as child.", dest, child);
 			dest.addAsLastChild(copyOf(child));
 		}
 		return dest;
@@ -163,7 +164,7 @@ public class OutlineNode implements IOutlineNode {
 	 * @return
 	 */
 	public boolean setAsNextSiblingOf(OutlineNode newPreviousSibling) {
-		LOGGER.info("Setting {} as next sibling of {}.", this, newPreviousSibling);
+		LOGGER.debug("Setting {} as next sibling of {}.", this, newPreviousSibling);
 		final Optional<IOutlineNode> parentOpt = requireNonNull(newPreviousSibling).getParent();
 		checkArgument(parentOpt.isPresent());
 		final IOutlineNode newParent = parentOpt.get();

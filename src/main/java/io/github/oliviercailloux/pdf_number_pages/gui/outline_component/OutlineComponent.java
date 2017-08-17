@@ -154,6 +154,7 @@ public class OutlineComponent {
 		}
 		{
 			final EditingSupportPageLabel editingSupport = new EditingSupportPageLabel(viewer);
+			editingSupport.setLabelRangesByIndex(labelRangesByIndex);
 			JFace.addTextTreeViewerColumn(viewer, tree.getColumn(2), editingSupport);
 		}
 		viewer.setInput(outline);

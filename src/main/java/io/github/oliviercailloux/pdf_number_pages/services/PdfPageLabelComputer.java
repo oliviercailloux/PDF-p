@@ -5,6 +5,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import com.google.common.base.Strings;
+
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
 import io.github.oliviercailloux.pdf_number_pages.model.RangeStyle;
@@ -84,12 +86,12 @@ public class PdfPageLabelComputer {
 		}
 	}
 
-	public String getLabelFromPageIndex(int index, LabelRangesByIndex l) {
+	public String getLabelFromPageIndex(int index, LabelRangesByIndex labelRangesByIndex) {
 		/**
 		 * Example: ask for index 6 given range starting at absolute page index 4,
 		 * labelling starting at 20. Should consider virtual index 20 + (6 − 4) = 22.
 		 */
-		final Entry<Integer, PDPageLabelRangeWithEquals> rangeEntry = l.floorEntry(index);
+		final Entry<Integer, PDPageLabelRangeWithEquals> rangeEntry = labelRangesByIndex.floorEntry(index);
 		checkArgument(rangeEntry != null);
 		final int rangeStartAbsolute = rangeEntry.getKey();
 		final PDPageLabelRangeWithEquals range = rangeEntry.getValue();
@@ -101,6 +103,6 @@ public class PdfPageLabelComputer {
 		final String pdfBoxStyle = range.getStyle();
 		final RangeStyle style = RangeStyle.fromPdfBoxStyle(pdfBoxStyle);
 		final String computedLabel = getLabel(virtualIndex, style);
-		return range.getPrefix() + computedLabel;
+		return Strings.nullToEmpty(range.getPrefix()) + computedLabel;
 	}
 }

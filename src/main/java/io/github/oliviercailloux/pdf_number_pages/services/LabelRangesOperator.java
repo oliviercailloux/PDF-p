@@ -226,6 +226,7 @@ public class LabelRangesOperator {
 		final PdfBookmark bookmark = new PdfBookmark(title, pageNb);
 		final OutlineNode readOutline = OutlineNode.newOutline(bookmark);
 		final Iterable<PDOutlineItem> children = pdOutline.children();
+		LOGGER.debug("Reading children of: {}.", title);
 		for (PDOutlineItem child : children) {
 			readOutline.addAsLastChild(readOutline(child));
 		}

@@ -60,7 +60,7 @@ public class EditingSupportPage extends IntEditingSupport<OutlineNode> {
 		checkState(bookmarkOpt.isPresent());
 		final PdfBookmark bookmark = bookmarkOpt.get();
 		element.setBookmark(new PdfBookmark(bookmark.getTitle(), value - 1));
-		LOGGER.info("Element set: {}.", element);
+		LOGGER.debug("Element set: {}.", element);
 	}
 
 	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {

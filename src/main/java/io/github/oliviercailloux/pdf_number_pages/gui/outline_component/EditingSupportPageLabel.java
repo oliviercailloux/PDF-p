@@ -13,6 +13,7 @@ import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.PdfBookmark;
+import io.github.oliviercailloux.pdf_number_pages.services.PdfPageLabelComputer;
 import io.github.oliviercailloux.swt_tools.TextEditingSupport;
 
 public class EditingSupportPageLabel extends TextEditingSupport<OutlineNode> {
@@ -23,6 +24,8 @@ public class EditingSupportPageLabel extends TextEditingSupport<OutlineNode> {
 	private LabelRangesByIndex labelRangesByIndex;
 
 	private Outline outline;
+
+	private final PdfPageLabelComputer pdfPageLabelComputer = new PdfPageLabelComputer();
 
 	public EditingSupportPageLabel(ColumnViewer viewer) {
 		super(viewer, OutlineNode.class);
@@ -46,11 +49,12 @@ public class EditingSupportPageLabel extends TextEditingSupport<OutlineNode> {
 	@Override
 	public String getValueTyped(OutlineNode element) {
 		assert element != null;
+		checkState(!labelRangesByIndex.isEmpty());
 		LOGGER.debug("Getting value for: {}.", element);
 		final Optional<PdfBookmark> bookmarkOpt = element.getBookmark();
 		checkState(bookmarkOpt.isPresent());
-//		final PdfBookmark bookmark = bookmarkOpt.get();
-		return "Todo";
+		final PdfBookmark bookmark = bookmarkOpt.get();
+		return pdfPageLabelComputer.getLabelFromPageIndex(bookmark.getPhysicalPageNumber(), labelRangesByIndex);
 	}
 
 	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
@@ -63,7 +67,7 @@ public class EditingSupportPageLabel extends TextEditingSupport<OutlineNode> {
 
 	@Override
 	public void setValueTyped(OutlineNode element, String value) {
-		LOGGER.info("Not implemented: set value.");
+		throw new UnsupportedOperationException("Not implemented: set value.");
 	}
 
 }

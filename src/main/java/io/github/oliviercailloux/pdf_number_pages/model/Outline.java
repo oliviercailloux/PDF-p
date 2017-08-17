@@ -3,6 +3,7 @@ package io.github.oliviercailloux.pdf_number_pages.model;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
@@ -65,11 +66,13 @@ public class Outline implements IOutlineNode {
 		if (children.isEmpty()) {
 			return;
 		}
-		for (OutlineNode child : children) {
+		final Iterator<OutlineNode> iterator = children.iterator();
+		while(iterator.hasNext()) {
+			final OutlineNode child = iterator.next();
+			iterator.remove();
 			child.removeParent();
 			child.unregister(this);
 		}
-		children.clear();
 		post();
 	}
 

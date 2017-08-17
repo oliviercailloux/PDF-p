@@ -81,13 +81,20 @@ public class Reader {
 		LOGGER.debug("Input path changed, reading.");
 		final String errorMessage;
 		final boolean succeeded;
+		/**
+		 * We must change the outline before the label ranges, because otherwise we get
+		 * an outline (that will possibly try to refresh) with a label ranges content
+		 * that does not match it, in particular, which might be empty, which might make
+		 * the outline view unhappy if it relies on the label ranges.
+		 */
+		outline.clear();
+
 		labelRangesByIndex.clear();
 		final LabelRangesByIndex readLabelRanges = labelRangesOperator.readLabelRanges(this.inputPath);
 		labelRangesByIndex.putAll(readLabelRanges);
 		errorMessage = labelRangesOperator.getErrorMessage();
 		succeeded = labelRangesOperator.succeeded();
 		final boolean outlineReadSucceeded = labelRangesOperator.outlineReadSucceeded();
-		outline.clear();
 		if (outlineReadSucceeded) {
 			final Outline readOutline = labelRangesOperator.getOutline().get();
 			/**

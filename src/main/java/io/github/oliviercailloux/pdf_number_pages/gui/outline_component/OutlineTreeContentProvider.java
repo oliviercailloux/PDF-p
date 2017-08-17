@@ -24,7 +24,6 @@ public class OutlineTreeContentProvider implements ITreeContentProvider {
 
 	@Override
 	public Object[] getElements(Object inputElement) {
-//		final DummyOutlineRootNode dummyOutline = (DummyOutlineRootNode) inputElement;
 		final Outline outline = (Outline) inputElement;
 		LOGGER.debug("Returning elements of {}.", inputElement);
 		return Iterables.toArray(outline.getChildren(), OutlineNode.class);

@@ -7,10 +7,6 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 
-import io.github.oliviercailloux.pdf_number_pages.model.Outline;
-import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
-import io.github.oliviercailloux.pdf_number_pages.model.PdfBookmark;
-
 public class TestOutline {
 
 	@Test
@@ -62,6 +58,9 @@ public class TestOutline {
 		assertEquals(ImmutableList.of(n3), n0.getChildren());
 		assertEquals(0, n3.getLocalOrder().get().intValue());
 		assertEquals(n0, n3.getParent().get());
+
+		outline.clear();
+		assertEquals(ImmutableList.of(), outline.getChildren());
 	}
 
 }

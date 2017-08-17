@@ -33,6 +33,19 @@ import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
+/**
+ * TODO Consider implementing an L2Controller, not linked to the GUI (lower
+ * level). It contains the model: labels, outline, and reader and saver. This
+ * controller delegates to the l2controller. The l2controller is the sole
+ * abilitated to change the model (possibly via reader / saver?). Also,
+ * possibly: the l2controller has the data and writes to it, instead of the
+ * reader and saver. Those only have read-only access to the data. The
+ * l2controller fires the events. It is better able to decide when to fire
+ * exactly (e.g. clear all labels and all outline and then fire).
+ *
+ * @author Olivier Cailloux
+ *
+ */
 public class Controller {
 	private static final String APP_NAME = "PDF Number pages";
 
@@ -117,6 +130,7 @@ public class Controller {
 		outlineComponent = new OutlineComponent();
 		outlineComponent.setOutline(outline);
 		outlineComponent.setReader(reader);
+		outlineComponent.setLabelRangesByIndex(labelRangesByIndex);
 
 		prudentActor = new PrudentActor();
 		prudentActor.setSaver(saver);
@@ -259,8 +273,8 @@ public class Controller {
 		 */
 		LOGGER.info("Start init.");
 		initGui();
-		display.asyncExec(() -> reader.setInputPath(Paths
-				.get("/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Gen Lib.pdf")));
+		display.asyncExec(() -> reader.setInputPath(Paths.get(
+				"/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Springer, with structure.pdf")));
 		display.asyncExec(() -> {
 			if (!labelRangesByIndex.isEmpty()) {
 				LOGGER.debug("Setting auto save.");
