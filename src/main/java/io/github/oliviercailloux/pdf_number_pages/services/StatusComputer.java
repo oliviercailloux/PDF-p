@@ -1,5 +1,6 @@
 package io.github.oliviercailloux.pdf_number_pages.services;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
@@ -12,6 +13,7 @@ import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaveJob;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaverFinishedEvent;
@@ -31,33 +33,38 @@ import io.github.oliviercailloux.pdf_number_pages.services.saver.SaverFinishedEv
  * this object might report a status “saved” although the file is in fact
  * modified.
  * </p>
+ * <p>
+ * This object also gives the changed status, compared to the last read.
+ * </p>
  *
  * @author Olivier Cailloux
  *
  */
-public class SavedStatusComputer {
+public class StatusComputer {
 	@SuppressWarnings("unused")
-	private static final Logger LOGGER = LoggerFactory.getLogger(SavedStatusComputer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(StatusComputer.class);
+
+	private boolean hasChanged;
 
 	private boolean isSaved;
 
 	private LabelRangesByIndex labelRangesByIndex;
 
+	private Optional<Outline> outline;
+
 	private Reader reader;
 
 	private Saver saver;
 
-	final EventBus eventBus = new EventBus(SavedStatusComputer.class.getCanonicalName());
+	final EventBus eventBus = new EventBus(StatusComputer.class.getCanonicalName());
 
-	public SavedStatusComputer() {
+	public StatusComputer() {
 		isSaved = false;
 		labelRangesByIndex = null;
 		saver = null;
 		reader = null;
-	}
-
-	public LabelRangesByIndex getLabelRangesByIndex() {
-		return labelRangesByIndex;
+		outline = Optional.empty();
+		hasChanged = false;
 	}
 
 	public Reader getReader() {
@@ -66,6 +73,13 @@ public class SavedStatusComputer {
 
 	public Saver getSaver() {
 		return saver;
+	}
+
+	/**
+	 * @return <code>false</code> if no read has occurred yet.
+	 */
+	public boolean hasChangedSinceLastRead() {
+		return hasChanged;
 	}
 
 	public boolean isSaved() {
@@ -79,6 +93,7 @@ public class SavedStatusComputer {
 		if (lastSaveJobResult.isPresent()) {
 			setSavedStatus(lastSaveJobResult.get());
 		}
+		setChangedStatus();
 	}
 
 	public void register(Object listener) {
@@ -95,6 +110,13 @@ public class SavedStatusComputer {
 		labelRangesByIndex.register(this);
 	}
 
+	public void setOutline(Optional<Outline> outline) {
+		this.outline = requireNonNull(outline);
+		if (outline.isPresent()) {
+			outline.get().register(this);
+		}
+	}
+
 	public void setReader(Reader reader) {
 		this.reader = requireNonNull(reader);
 	}
@@ -104,15 +126,28 @@ public class SavedStatusComputer {
 		saver.register(this);
 	}
 
+	private void setChangedStatus() {
+		checkState(outline.isPresent());
+		final Optional<ReadEvent> lastReadEvent = reader.getLastReadEvent();
+		if (!lastReadEvent.isPresent()) {
+			return;
+		}
+		final ReadEvent readEvent = lastReadEvent.get();
+		final boolean labelsChanged = !readEvent.getLabelRangesByIndex().equals(labelRangesByIndex);
+		final boolean outlineChanged = !readEvent.getOutline().equals(outline.get());
+		hasChanged = labelsChanged || outlineChanged;
+	}
+
 	private void setSavedStatus(SaverFinishedEvent event) {
 		final boolean wasSaved = isSaved;
 		final SaveJob job = event.getSaveJob();
-		final boolean eqModel = job.getLabelRangesByIndex().equals(labelRangesByIndex);
+		final boolean eqRanges = job.getLabelRangesByIndex().equals(labelRangesByIndex);
+		final boolean eqOutlines = job.getOutline().equals(outline);
 		final boolean eqInp = job.getInputPath().equals(reader.getInputPath());
 		final boolean eqOutp = job.getOutputPath().equals(saver.getOutputPath());
 		final boolean noErr = event.getErrorMessage().isEmpty();
-		isSaved = eqModel && eqInp && eqOutp && noErr;
-		LOGGER.debug("Tested equality: {}, {}, {}, {}.", eqModel, eqInp, eqOutp, noErr);
+		isSaved = eqRanges && eqOutlines && eqInp && eqOutp && noErr;
+		LOGGER.debug("Tested equality: {}, {}, {}, {}, {}.", eqRanges, eqOutlines, eqInp, eqOutp, noErr);
 
 		if (wasSaved != isSaved) {
 			eventBus.post(new SavedStatusChanged(isSaved));

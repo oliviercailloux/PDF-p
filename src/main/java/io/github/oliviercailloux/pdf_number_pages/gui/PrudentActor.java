@@ -16,7 +16,7 @@ import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
-import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
+import io.github.oliviercailloux.pdf_number_pages.services.StatusComputer;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaverFinishedEvent;
 
@@ -44,11 +44,11 @@ public class PrudentActor {
 
 	private Reader reader;
 
-	private SavedStatusComputer savedStatusComputer;
-
 	private Saver saver;
 
 	private Shell shell;
+
+	private StatusComputer statusComputer;
 
 	private boolean waitingForSave;
 
@@ -65,11 +65,14 @@ public class PrudentActor {
 		final Optional<Future<Void>> job = saver.getLastJobResult();
 		final boolean ongoing = job.isPresent() && !job.get().isDone();
 		if (ongoing) {
+			LOGGER.debug("Let’s act prudently. We wait.");
 			waitForSave();
-		} else if (!savedStatusComputer.isSaved() && !labelRangesByIndex.isEmpty()
-				&& !labelRangesByIndex.equals(reader.getLastRead())) {
+		} else if (!statusComputer.isSaved() && !labelRangesByIndex.isEmpty()
+				&& statusComputer.hasChangedSinceLastRead()) {
+			LOGGER.debug("Let’s act prudently. We confirm.");
 			confirmThenAct();
 		} else {
+			LOGGER.debug("Let’s act not too prudently. We rush.");
 			action.run();
 		}
 	}
@@ -104,16 +107,16 @@ public class PrudentActor {
 		return reader;
 	}
 
-	public SavedStatusComputer getSavedStatusComputer() {
-		return savedStatusComputer;
-	}
-
 	public Saver getSaver() {
 		return saver;
 	}
 
 	public Shell getShell() {
 		return shell;
+	}
+
+	public StatusComputer getStatusComputer() {
+		return statusComputer;
 	}
 
 	@Subscribe
@@ -151,16 +154,16 @@ public class PrudentActor {
 		this.reader = requireNonNull(reader);
 	}
 
-	public void setSavedStatusComputer(SavedStatusComputer savedStatusComputer) {
-		this.savedStatusComputer = requireNonNull(savedStatusComputer);
-	}
-
 	public void setSaver(Saver saver) {
 		this.saver = requireNonNull(saver);
 	}
 
 	public void setShell(Shell shell) {
 		this.shell = shell;
+	}
+
+	public void setStatusComputer(StatusComputer statusComputer) {
+		this.statusComputer = requireNonNull(statusComputer);
 	}
 
 	public void waitForSave() {

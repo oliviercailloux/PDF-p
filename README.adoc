@@ -14,6 +14,18 @@ In case of problems: here is how to change the log verbosity. (See Logback https
 ** Example: `java "-Dlogback.configurationFile=/home/…/logback.xml" -jar …/pdf-number-pages.jar`.
 * You may also add `"-Dlogback.statusListenerClass=ch.qos.logback.core.status.OnConsoleStatusListener"` to see where Logback looks for configuration instructions.
 
+== Techical documentation
+gs -sDEVICE=bbox -dBATCH -dNOPAUSE -c save pop -f B.pdf
+%%BoundingBox: 161 519 380 594
+
+pdfinfo -box B.pdf
+Page size:      439.37 x 666.142 pts
+MediaBox:           0.00     0.00   439.37   666.14
+CropBox:            0.00     0.00   439.37   666.14
+BleedBox:           0.00     0.00   439.37   666.14
+TrimBox:            0.00     0.00   439.37   666.14
+ArtBox:             0.00     0.00   439.37   666.14
+
 == Credits
 https://www.flaticon.com/free-icon/phonebook_129661[Icon] made by http://www.freepik.com/[Freepik] from http://www.flaticon.com[www.flaticon.com].
 

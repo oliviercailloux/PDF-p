@@ -25,7 +25,7 @@ import com.google.common.eventbus.Subscribe;
 import io.github.oliviercailloux.pdf_number_pages.services.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusChanged;
-import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
+import io.github.oliviercailloux.pdf_number_pages.services.StatusComputer;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.OutputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
@@ -52,7 +52,7 @@ public class InputOutputComponent {
 
 	private Reader reader;
 
-	private SavedStatusComputer savedStatusComputer;
+	private StatusComputer savedStatusComputer;
 
 	private Saver saver;
 
@@ -107,18 +107,6 @@ public class InputOutputComponent {
 		if (toOpen != null) {
 			saver.setOutputPath(Paths.get(toOpen));
 		}
-	}
-
-	public Reader getReader() {
-		return reader;
-	}
-
-	public SavedStatusComputer getSavedStatusComputer() {
-		return savedStatusComputer;
-	}
-
-	public Saver getSaver() {
-		return saver;
 	}
 
 	public void init(Composite parent) {
@@ -183,7 +171,7 @@ public class InputOutputComponent {
 		}
 	}
 
-	public void setSavedStatusComputer(SavedStatusComputer savedStatusComputer) {
+	public void setStatusComputer(StatusComputer savedStatusComputer) {
 		this.savedStatusComputer = requireNonNull(savedStatusComputer);
 	}
 

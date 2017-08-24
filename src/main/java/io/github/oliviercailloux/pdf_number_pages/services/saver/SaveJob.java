@@ -14,6 +14,8 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
+import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
+import io.github.oliviercailloux.pdf_number_pages.utils.BBox;
 
 public class SaveJob {
 	@SuppressWarnings("unused")
@@ -21,26 +23,34 @@ public class SaveJob {
 
 	private Path inputPath;
 
-	private LabelRangesByIndex labelRanges;
-
-	/**
-	 * May be <code>null</code>.
-	 */
-	private Outline outline;
-
 	private Path outputPath;
 
 	private boolean overwrite;
 
-	public SaveJob(LabelRangesByIndex labelRanges, Outline outline, Path inputPath, Path outputPath,
-			boolean overwrite) {
-		this.labelRanges = LabelRangesByIndex.deepImmutableCopy(requireNonNull(labelRanges));
-		this.outline = outline;
-		checkArgument(!labelRanges.isEmpty());
+	private final PdfPart pdf;
+
+	public SaveJob(LabelRangesByIndex labelRangesByIndex, Optional<Outline> outline, Optional<BBox> cropBox,
+			Path inputPath, Path outputPath, boolean overwrite) {
+		pdf = new PdfPart();
+		pdf.setLabelRangesByIndex(LabelRangesByIndex.deepImmutableCopy(requireNonNull(labelRangesByIndex)));
+		requireNonNull(outline);
+		if (outline.isPresent()) {
+			final Outline newOutline = new Outline();
+			newOutline.addCopies(outline.get().getChildren());
+			pdf.setOutline(newOutline);
+		}
+		checkArgument(!labelRangesByIndex.isEmpty());
 		this.inputPath = requireNonNull(inputPath);
 		this.outputPath = requireNonNull(outputPath);
 		this.overwrite = overwrite;
+		if (requireNonNull(cropBox).isPresent()) {
+			pdf.setCropBox(cropBox.get());
+		}
 		LOGGER.debug("Set job: {}.", this);
+	}
+
+	public Optional<BBox> getCropBox() {
+		return pdf.getCropBox();
 	}
 
 	public Path getInputPath() {
@@ -48,11 +58,11 @@ public class SaveJob {
 	}
 
 	public LabelRangesByIndex getLabelRangesByIndex() {
-		return labelRanges;
+		return pdf.getLabelRangesByIndex();
 	}
 
 	public Optional<Outline> getOutline() {
-		return Optional.ofNullable(outline);
+		return pdf.getOutline();
 	}
 
 	public Path getOutputPath() {
@@ -69,8 +79,7 @@ public class SaveJob {
 		helper.add("Input path", inputPath);
 		helper.add("Output path", outputPath);
 		helper.add("Overwrite", overwrite);
-		helper.add("Label ranges", labelRanges);
-		helper.add("Outline", outline);
+		helper.add("Pdf", pdf);
 		return helper.toString();
 	}
 }

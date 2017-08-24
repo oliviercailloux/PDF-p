@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import org.apache.pdfbox.pdmodel.common.PDPageLabelRange;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageFitWidthDestination;
@@ -29,7 +30,7 @@ import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
-import io.github.oliviercailloux.pdf_number_pages.services.SavedStatusComputer;
+import io.github.oliviercailloux.pdf_number_pages.services.StatusComputer;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 
@@ -77,7 +78,7 @@ public class Controller {
 
 	private Reader reader;
 
-	private final SavedStatusComputer savedStatusComputer;
+	private final StatusComputer statusComputer;
 
 	private final SaveOptionsComponent saveOptionsComponent;
 
@@ -109,10 +110,11 @@ public class Controller {
 		autoSaver.setReader(reader);
 		autoSaver.setOutline(outline);
 
-		savedStatusComputer = new SavedStatusComputer();
-		savedStatusComputer.setLabelRangesByIndex(labelRangesByIndex);
-		savedStatusComputer.setReader(reader);
-		savedStatusComputer.setSaver(saver);
+		statusComputer = new StatusComputer();
+		statusComputer.setLabelRangesByIndex(labelRangesByIndex);
+		statusComputer.setReader(reader);
+		statusComputer.setSaver(saver);
+		statusComputer.setOutline(Optional.of(outline));
 
 		Display.setAppName(APP_NAME);
 		display = Display.getDefault();
@@ -122,7 +124,7 @@ public class Controller {
 		inputOutputComponent = new InputOutputComponent();
 		inputOutputComponent.setReader(reader);
 		inputOutputComponent.setSaver(saver);
-		inputOutputComponent.setSavedStatusComputer(savedStatusComputer);
+		inputOutputComponent.setStatusComputer(statusComputer);
 		saveOptionsComponent = new SaveOptionsComponent();
 		saveOptionsComponent.setLabelRangesByIndex(labelRangesByIndex);
 		saveOptionsComponent.setSaver(saver);
@@ -135,7 +137,7 @@ public class Controller {
 		prudentActor = new PrudentActor();
 		prudentActor.setSaver(saver);
 		prudentActor.setReader(reader);
-		prudentActor.setSavedStatusComputer(savedStatusComputer);
+		prudentActor.setStatusComputer(statusComputer);
 		prudentActor.setLabelRangesByIndex(labelRangesByIndex);
 
 		icon = null;
@@ -272,16 +274,30 @@ public class Controller {
 		 * closing, as part of the close, and fails as there’s no display any more.
 		 */
 		LOGGER.info("Start init.");
+		/**
+		 * At this stage, the model and services are initialized. We change the model
+		 * here. So that the change events are not processed by the GUI. When the GUI is
+		 * initialized (just after), it sees the right values from the start, thus
+		 * avoiding a refresh that would be visible by the end-user.
+		 */
+		/** FIXME the start height depends on the content of the panels. */
+		reader.setInputPath(Paths.get(
+				"/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Springer, with structure.pdf"));
+		if (!labelRangesByIndex.isEmpty()) {
+			LOGGER.debug("Setting auto save.");
+			saver.setOverwrite(true);
+			autoSaver.setAutoSave(true);
+		}
+
 		initGui();
-		display.asyncExec(() -> reader.setInputPath(Paths.get(
-				"/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Springer, with structure.pdf")));
-		display.asyncExec(() -> {
-			if (!labelRangesByIndex.isEmpty()) {
-				LOGGER.debug("Setting auto save.");
-				saver.setOverwrite(true);
-				autoSaver.setAutoSave(true);
-			}
-		});
+		/**
+		 * FIXME First: why does it save auto when changing outline, even though save
+		 * status change is not yet implemented?
+		 */
+		/**
+		 * FIXME open a pdf, quit this program: it quits only when the pdf viewer is
+		 * closed?
+		 */
 		LOGGER.info("Finished init.");
 		fireView();
 	}
@@ -292,7 +308,7 @@ public class Controller {
 		saver.register(requireNonNull(listener));
 		autoSaver.register(listener);
 		reader.register(listener);
-		savedStatusComputer.register(listener);
+		statusComputer.register(listener);
 	}
 
 }

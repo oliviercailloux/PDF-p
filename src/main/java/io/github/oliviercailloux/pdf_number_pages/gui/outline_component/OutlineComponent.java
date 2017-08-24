@@ -168,7 +168,7 @@ public class OutlineComponent {
 					final IStructuredSelection sel = viewer.getStructuredSelection();
 					for (Object o : sel.toList()) {
 						final OutlineNode toDelete = (OutlineNode) o;
-						toDelete.getParent().get().remove(toDelete);
+						toDelete.getParent().get().remove(toDelete.getLocalOrder().get().intValue());
 					}
 					e.doit = false;
 				} else if (e.character == '+') {

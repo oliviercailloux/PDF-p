@@ -2,19 +2,14 @@ package io.github.oliviercailloux.pdf_number_pages.services;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.channels.ClosedByInterruptException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import java.util.SortedSet;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.pdmodel.common.PDPageLabelRange;
 import org.apache.pdfbox.pdmodel.common.PDPageLabels;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
@@ -27,11 +22,10 @@ import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
 import io.github.oliviercailloux.pdf_number_pages.model.PdfBookmark;
-import io.github.oliviercailloux.pdf_number_pages.services.saver.OutlineToPdf;
 
-public class LabelRangesOperator {
+public class PdfReader {
 	@SuppressWarnings("unused")
-	private static final Logger LOGGER = LoggerFactory.getLogger(LabelRangesOperator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(PdfReader.class);
 
 	private PDDocument current;
 
@@ -46,21 +40,15 @@ public class LabelRangesOperator {
 
 	private String outlineErrorMessage;
 
-	private final OutlineToPdf outlineToPdf;
-
-	private boolean overwrite;
-
 	private LabelRangesByIndex ranges;
 
 	private boolean succeeded;
 
-	public LabelRangesOperator() {
+	public PdfReader() {
 		errorMessage = "";
-		overwrite = false;
 		succeeded = false;
 		ranges = null;
 		outline = null;
-		outlineToPdf = new OutlineToPdf();
 		current = null;
 		lastOutlineReadSucceeded = false;
 		outlineErrorMessage = "";
@@ -120,6 +108,15 @@ public class LabelRangesOperator {
 				final PDDocumentCatalog catalog = document.getDocumentCatalog();
 				final PDPageLabels labels = catalog.getPageLabels();
 				read(labels);
+				final PDPageTree pages = document.getPages();
+				for (PDPage page : pages) {
+					LOGGER.info("CB: {}.", page.getCropBox());
+					LOGGER.debug("AB: {}.", page.getArtBox());
+					LOGGER.debug("BB: {}.", page.getBBox());
+					LOGGER.debug("BlB: {}.", page.getBleedBox());
+					LOGGER.debug("TB: {}.", page.getTrimBox());
+					LOGGER.info("MB: {}.", page.getMediaBox());
+				}
 				final PDDocumentOutline pdOutline = catalog.getDocumentOutline();
 				read(pdOutline);
 				errorMessage = "";
@@ -131,66 +128,6 @@ public class LabelRangesOperator {
 			}
 		}
 		return ranges;
-	}
-
-	public void save(Path inputPath, Path outputPath, LabelRangesByIndex labelRangesByIndex) {
-		assert inputPath != null;
-		assert outputPath != null;
-		assert labelRangesByIndex != null;
-		assert labelRangesByIndex.size() >= 1;
-		final File inputFile = inputPath.toFile();
-		if (!inputFile.exists()) {
-			errorMessage = "File not found";
-			succeeded = false;
-		} else {
-			try (PDDocument document = PDDocument.load(inputPath.toFile())) {
-				if (document.isEncrypted()) {
-					errorMessage = "Document is encrypted.";
-					succeeded = false;
-				}
-				labelRangesByIndex.addToDocument(document);
-				if (outline != null) {
-					outlineToPdf.setDocument(document);
-					final PDDocumentOutline pdDocumentOutline = outlineToPdf.asDocumentOutline(outline);
-					document.getDocumentCatalog().setDocumentOutline(pdDocumentOutline);
-				}
-				final StandardOpenOption[] openOptions = overwrite
-						? new StandardOpenOption[] { StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE,
-								StandardOpenOption.WRITE }
-						: new StandardOpenOption[] { StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE };
-				final Path empty = Paths.get("");
-				if (outputPath.equals(empty)) {
-					LOGGER.info("Output path is empty.");
-				}
-				try (OutputStream outStr = Files.newOutputStream(outputPath, openOptions)) {
-					document.save(outStr);
-				}
-				errorMessage = "";
-				succeeded = true;
-			} catch (ClosedByInterruptException e) {
-				errorMessage = "Interrupted.";
-				LOGGER.debug("Writing.", e);
-			} catch (FileAlreadyExistsException e) {
-				errorMessage = "Already exists: " + e.getMessage();
-				LOGGER.debug("Writing.", e);
-			} catch (IOException e) {
-				errorMessage = e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
-				LOGGER.error("Writing.", e);
-				succeeded = false;
-			}
-		}
-	}
-
-	/**
-	 * @param outline
-	 *            <code>null</code> for no outline to save.
-	 */
-	public void setOutline(Outline outline) {
-		this.outline = outline;
-	}
-
-	public void setOverwrite(boolean overwrite) {
-		this.overwrite = overwrite;
 	}
 
 	public boolean succeeded() {

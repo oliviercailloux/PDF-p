@@ -106,19 +106,31 @@ public class OutlineNode implements IOutlineNode {
 	 *         the given parent.
 	 */
 	public boolean changeParent(IOutlineNode newParent) {
+		LOGGER.info("Changing parent from {} to {}.", parent, newParent);
 		requireNonNull(newParent);
-		if (newParent.equals(this.parent)) {
+		if (newParent == this.parent) {
 			final List<OutlineNode> siblings = this.parent.getChildren();
 			if (siblings.get(siblings.size() - 1) == this) {
 				return false;
 			}
 		}
 		if (this.parent != null) {
-			final boolean removed = this.parent.remove(this);
-			assert removed;
+			this.parent.remove(localOrder);
 		}
 		newParent.addAsLastChild(this);
 		return true;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof IOutlineNode)) {
+			return false;
+		}
+		final IOutlineNode n2 = (IOutlineNode) obj;
+		return Outline.areEqual(this, n2);
 	}
 
 	public Optional<PdfBookmark> getBookmark() {
@@ -140,6 +152,11 @@ public class OutlineNode implements IOutlineNode {
 		return Optional.ofNullable(parent);
 	}
 
+	@Override
+	public int hashCode() {
+		return Outline.computeHashcode(this);
+	}
+
 	@Subscribe
 	public void modelChanged(ModelChanged event) {
 		delegate.post(event);
@@ -151,8 +168,8 @@ public class OutlineNode implements IOutlineNode {
 	}
 
 	@Override
-	public boolean remove(OutlineNode child) {
-		return delegate.remove(child);
+	public void remove(int childNb) {
+		delegate.remove(childNb);
 	}
 
 	/**
@@ -172,14 +189,13 @@ public class OutlineNode implements IOutlineNode {
 		final List<OutlineNode> newSiblings = newParent.getChildren();
 		final int previousLocalOrder = newPreviousSibling.getLocalOrder().get();
 		checkState(previousLocalOrder != -1);
-		if (newParent.equals(parent)) {
+		if (newParent == parent) {
 			if (newSiblings.size() > previousLocalOrder + 1 && newSiblings.get(previousLocalOrder + 1) == this) {
 				return false;
 			}
 		}
 		if (parent != null) {
-			final boolean removed = parent.remove(this);
-			assert removed;
+			parent.remove(localOrder);
 		}
 		/** The removal might have changed the previous local order. */
 		newParent.addChild(newPreviousSibling.getLocalOrder().get() + 1, this);
@@ -214,7 +230,12 @@ public class OutlineNode implements IOutlineNode {
 	 *
 	 */
 	void removeParent() {
-		checkState(this.parent == null || !this.parent.getChildren().contains(this));
+		/**
+		 * This check may fail because my parent may have as a child another object that
+		 * equals me.
+		 */
+//		checkState(this.parent == null || !this.parent.getChildren().contains(this),
+//				"I still am among my parent’s children!");
 		this.parent = null;
 		this.localOrder = -1;
 	}

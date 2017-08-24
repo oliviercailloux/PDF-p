@@ -26,11 +26,11 @@ public class Reader {
 
 	private LabelRangesByIndex labelRangesByIndex;
 
-	private final LabelRangesOperator labelRangesOperator = new LabelRangesOperator();
-
 	private ReadEvent lastReadEvent;
 
 	private Outline outline;
+
+	private final PdfReader pdfReader = new PdfReader();
 
 	final EventBus eventBus = new EventBus(Reader.class.getCanonicalName());
 
@@ -47,13 +47,6 @@ public class Reader {
 
 	public LabelRangesByIndex getLabelRangesByIndex() {
 		return labelRangesByIndex;
-	}
-
-	/**
-	 * @return <code>null</code> iff no read has ever occurred.
-	 */
-	public LabelRangesByIndex getLastRead() {
-		return labelRangesOperator.getLastRead();
 	}
 
 	public Optional<ReadEvent> getLastReadEvent() {
@@ -90,21 +83,17 @@ public class Reader {
 		outline.clear();
 
 		labelRangesByIndex.clear();
-		final LabelRangesByIndex readLabelRanges = labelRangesOperator.readLabelRanges(this.inputPath);
+		final LabelRangesByIndex readLabelRanges = pdfReader.readLabelRanges(this.inputPath);
 		labelRangesByIndex.putAll(readLabelRanges);
-		errorMessage = labelRangesOperator.getErrorMessage();
-		succeeded = labelRangesOperator.succeeded();
-		final boolean outlineReadSucceeded = labelRangesOperator.outlineReadSucceeded();
+		errorMessage = pdfReader.getErrorMessage();
+		succeeded = pdfReader.succeeded();
+		final boolean outlineReadSucceeded = pdfReader.outlineReadSucceeded();
 		if (outlineReadSucceeded) {
-			final Outline readOutline = labelRangesOperator.getOutline().get();
-			/**
-			 * FIXME If we want to keep a copy in the reader, we have to deep copy it,
-			 * because we can’t have the right parent pointer otherwise.
-			 */
+			final Outline readOutline = pdfReader.getOutline().get();
 			outline.addCopies(readOutline.getChildren());
 		}
-		lastReadEvent = new ReadEvent(succeeded, errorMessage, outlineReadSucceeded,
-				labelRangesOperator.getOutlineErrorMessage());
+		lastReadEvent = new ReadEvent(labelRangesByIndex, outline, succeeded, errorMessage, outlineReadSucceeded,
+				pdfReader.getOutlineErrorMessage());
 		eventBus.post(lastReadEvent);
 	}
 

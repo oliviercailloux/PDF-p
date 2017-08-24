@@ -20,9 +20,11 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import io.github.oliviercailloux.pdf_number_pages.model.BoundingBoxKeeper;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
+import io.github.oliviercailloux.pdf_number_pages.utils.BBox;
 
 /**
  * Controls a saver thread: whenever a job is in the queue, the saver thread
@@ -38,12 +40,14 @@ public class Saver {
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(Saver.class);
 
+	private Optional<BoundingBoxKeeper> boundingBox;
+
 	private final ListeningExecutorService executor = MoreExecutors.listeningDecorator(
 			Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Saver").build()));
 
 	private LabelRangesByIndex labelRangesByIndex;
 
-	private Outline outline;
+	private Optional<Outline> outline;
 
 	/**
 	 * Not <code>null</code>, not empty.
@@ -73,6 +77,8 @@ public class Saver {
 		outputPath = Paths.get(System.getProperty("user.home"), "out.pdf");
 		labelRangesByIndex = null;
 		overwrite = false;
+		outline = Optional.empty();
+		boundingBox = Optional.empty();
 		savedEventsFiringExecutor = MoreExecutors.directExecutor();
 		submittedJobCallback = null;
 	}
@@ -80,6 +86,10 @@ public class Saver {
 	public void close() {
 		checkState(submittedJob == null || submittedJob.isDone());
 		executor.shutdown();
+	}
+
+	public Optional<BoundingBoxKeeper> getBoundingBox() {
+		return boundingBox;
 	}
 
 	public LabelRangesByIndex getLabelRangesByIndex() {
@@ -101,7 +111,7 @@ public class Saver {
 	}
 
 	public Optional<Outline> getOutline() {
-		return Optional.ofNullable(outline);
+		return outline;
 	}
 
 	public Path getOutputPath() {
@@ -134,11 +144,16 @@ public class Saver {
 		LOGGER.debug("Attempting save.");
 		assert !labelRangesByIndex.isEmpty();
 		final Path inputPath = reader.getInputPath();
-		final SaveJob saveJob = new SaveJob(labelRangesByIndex, outline, inputPath, outputPath, overwrite);
+		final Optional<BBox> currentBox = boundingBox.map(k -> k.getCropBox());
+		final SaveJob saveJob = new SaveJob(labelRangesByIndex, outline, currentBox, inputPath, outputPath, overwrite);
 		submittedJob = executor.submit(new SaverRunnable(saveJob));
 		submittedJobCallback = new SaverRunnableCallback(this, saveJob);
 		Futures.addCallback(submittedJob, submittedJobCallback, savedEventsFiringExecutor);
 		eventBus.post(new StartedSavingEvent());
+	}
+
+	public void setBoundingBox(Optional<BoundingBoxKeeper> boundingBox) {
+		this.boundingBox = requireNonNull(boundingBox);
 	}
 
 	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
@@ -146,8 +161,8 @@ public class Saver {
 	}
 
 	public void setOutline(Outline outline) {
-		LOGGER.debug("Setting outline: {}.", outline);
-		this.outline = outline;
+		LOGGER.debug("Setting outline: {}.", requireNonNull(outline));
+		this.outline = Optional.of(outline);
 	}
 
 	public void setOutputPath(Path outputPath) {
