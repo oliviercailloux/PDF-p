@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
-import java.util.Optional;
 
 import org.apache.pdfbox.pdmodel.common.PDPageLabelRange;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageFitWidthDestination;
@@ -29,6 +28,7 @@ import io.github.oliviercailloux.pdf_number_pages.gui.outline_component.OutlineC
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
 import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
+import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.services.StatusComputer;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaver;
@@ -64,23 +64,23 @@ public class Controller {
 
 	private AutoSaver autoSaver;
 
+	private final CropComponent cropComponent;
+
 	private Image icon;
 
 	private final InputOutputComponent inputOutputComponent;
 
-	private final LabelRangesByIndex labelRangesByIndex;
-
 	private final LabelRangesComponent labelRangesComponent;
-
-	private final Outline outline;
 
 	private final OutlineComponent outlineComponent;
 
+	private PdfPart pdf;
+
 	private Reader reader;
 
-	private final StatusComputer statusComputer;
-
 	private final SaveOptionsComponent saveOptionsComponent;
+
+	private final StatusComputer statusComputer;
 
 	Display display;
 
@@ -91,30 +91,29 @@ public class Controller {
 	Shell shell;
 
 	public Controller() {
-		labelRangesByIndex = new LabelRangesByIndex();
-		outline = new Outline();
+		pdf = new PdfPart();
+		final Outline outline = new Outline();
+		pdf.setOutline(outline);
+		final LabelRangesByIndex labelRangesByIndex = pdf.getLabelRangesByIndex();
 
 		reader = new Reader();
 		reader.setLabelRangesByIndex(labelRangesByIndex);
 		reader.setOutline(outline);
 
 		saver = new Saver();
-		saver.setLabelRangesByIndex(labelRangesByIndex);
+		saver.setPdf(pdf);
 		saver.setReader(reader);
 		saver.setSavedEventsFiringExecutor((r) -> display.asyncExec(r));
-		saver.setOutline(outline);
 
 		autoSaver = new AutoSaver();
-		autoSaver.setSaver(saver);
-		autoSaver.setLabelRangesByIndex(labelRangesByIndex);
+		autoSaver.setPdf(pdf);
 		autoSaver.setReader(reader);
-		autoSaver.setOutline(outline);
+		autoSaver.setSaver(saver);
 
 		statusComputer = new StatusComputer();
-		statusComputer.setLabelRangesByIndex(labelRangesByIndex);
+		statusComputer.setPdf(pdf);
 		statusComputer.setReader(reader);
 		statusComputer.setSaver(saver);
-		statusComputer.setOutline(Optional.of(outline));
 
 		Display.setAppName(APP_NAME);
 		display = Display.getDefault();
@@ -133,6 +132,8 @@ public class Controller {
 		outlineComponent.setOutline(outline);
 		outlineComponent.setReader(reader);
 		outlineComponent.setLabelRangesByIndex(labelRangesByIndex);
+		cropComponent = new CropComponent();
+		cropComponent.setBoundingBoxKeeper(pdf.getBoundingBoxKeeper());
 
 		prudentActor = new PrudentActor();
 		prudentActor.setSaver(saver);
@@ -148,25 +149,25 @@ public class Controller {
 			final PDPageLabelRangeWithEquals r = new PDPageLabelRangeWithEquals();
 			r.setStart(1);
 			r.setStyle(PDPageLabelRange.STYLE_ROMAN_LOWER);
-			labelRangesByIndex.put(0, r);
+			pdf.getLabelRangesByIndex().put(0, r);
 		}
 		{
 			final PDPageLabelRangeWithEquals r = new PDPageLabelRangeWithEquals();
 			r.setStart(1);
 			r.setStyle(PDPageLabelRange.STYLE_DECIMAL);
-			labelRangesByIndex.put(15, r);
+			pdf.getLabelRangesByIndex().put(15, r);
 		}
 		{
 			final PDPageLabelRangeWithEquals r = new PDPageLabelRangeWithEquals();
 			r.setStart(1);
 			r.setStyle(PDPageLabelRange.STYLE_DECIMAL);
-			labelRangesByIndex.put(25, r);
+			pdf.getLabelRangesByIndex().put(25, r);
 		}
 		{
 			final PDPageLabelRangeWithEquals r = new PDPageLabelRangeWithEquals();
 			r.setStart(1);
 			r.setStyle(PDPageLabelRange.STYLE_DECIMAL);
-			labelRangesByIndex.put(35, r);
+			pdf.getLabelRangesByIndex().put(35, r);
 		}
 	}
 
@@ -206,10 +207,6 @@ public class Controller {
 		return requireNonNull(inputOutputComponent);
 	}
 
-	public LabelRangesByIndex getLabelRangesByIndex() {
-		return labelRangesByIndex;
-	}
-
 	public Saver getSaver() {
 		return saver;
 	}
@@ -234,6 +231,7 @@ public class Controller {
 		sash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		labelRangesComponent.init(sash);
 		outlineComponent.init(sash);
+		cropComponent.init(shell);
 		saveOptionsComponent.init(shell);
 		inputOutputComponent.init(shell);
 
@@ -281,9 +279,13 @@ public class Controller {
 		 * avoiding a refresh that would be visible by the end-user.
 		 */
 		/** FIXME the start height depends on the content of the panels. */
+		/**
+		 * FIXME Set a non-existent file, ⇒ the GUI does not show any error, no, it
+		 * shows, but not very visible.
+		 */
 		reader.setInputPath(Paths.get(
 				"/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Springer, with structure.pdf"));
-		if (!labelRangesByIndex.isEmpty()) {
+		if (!pdf.getLabelRangesByIndex().isEmpty()) {
 			LOGGER.debug("Setting auto save.");
 			saver.setOverwrite(true);
 			autoSaver.setAutoSave(true);
@@ -303,8 +305,9 @@ public class Controller {
 	}
 
 	public void register(Object listener) {
-		labelRangesByIndex.register(listener);
-		outline.register(listener);
+		pdf.getLabelRangesByIndex().register(listener);
+		pdf.getOutline().get().register(listener);
+		pdf.getBoundingBoxKeeper().register(listener);
 		saver.register(requireNonNull(listener));
 		autoSaver.register(listener);
 		reader.register(listener);

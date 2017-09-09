@@ -20,9 +20,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import io.github.oliviercailloux.pdf_number_pages.model.BoundingBoxKeeper;
-import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
-import io.github.oliviercailloux.pdf_number_pages.model.Outline;
+import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.utils.BBox;
 
@@ -40,14 +38,8 @@ public class Saver {
 	@SuppressWarnings("unused")
 	static final Logger LOGGER = LoggerFactory.getLogger(Saver.class);
 
-	private Optional<BoundingBoxKeeper> boundingBox;
-
 	private final ListeningExecutorService executor = MoreExecutors.listeningDecorator(
 			Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Saver").build()));
-
-	private LabelRangesByIndex labelRangesByIndex;
-
-	private Optional<Outline> outline;
 
 	/**
 	 * Not <code>null</code>, not empty.
@@ -55,6 +47,8 @@ public class Saver {
 	private Path outputPath;
 
 	private boolean overwrite;
+
+	private PdfPart pdf;
 
 	private Reader reader;
 
@@ -72,13 +66,11 @@ public class Saver {
 	volatile Optional<SaverFinishedEvent> lastSaveJobResult;
 
 	public Saver() {
+		pdf = null;
 		submittedJob = null;
 		lastSaveJobResult = Optional.empty();
 		outputPath = Paths.get(System.getProperty("user.home"), "out.pdf");
-		labelRangesByIndex = null;
 		overwrite = false;
-		outline = Optional.empty();
-		boundingBox = Optional.empty();
 		savedEventsFiringExecutor = MoreExecutors.directExecutor();
 		submittedJobCallback = null;
 	}
@@ -86,14 +78,6 @@ public class Saver {
 	public void close() {
 		checkState(submittedJob == null || submittedJob.isDone());
 		executor.shutdown();
-	}
-
-	public Optional<BoundingBoxKeeper> getBoundingBox() {
-		return boundingBox;
-	}
-
-	public LabelRangesByIndex getLabelRangesByIndex() {
-		return labelRangesByIndex;
 	}
 
 	public Optional<SaverFinishedEvent> getLastFinishedJobResult() {
@@ -108,10 +92,6 @@ public class Saver {
 	 */
 	public Optional<Future<Void>> getLastJobResult() {
 		return Optional.ofNullable(submittedJob);
-	}
-
-	public Optional<Outline> getOutline() {
-		return outline;
 	}
 
 	public Path getOutputPath() {
@@ -135,34 +115,21 @@ public class Saver {
 	}
 
 	public void save() {
-		checkState(!labelRangesByIndex.isEmpty());
+		checkState(!pdf.getLabelRangesByIndex().isEmpty());
 		assert (submittedJob == null) == (submittedJobCallback == null);
 		if (submittedJob != null) {
 			submittedJobCallback.cancel();
 			submittedJob.cancel(true);
 		}
 		LOGGER.debug("Attempting save.");
-		assert !labelRangesByIndex.isEmpty();
 		final Path inputPath = reader.getInputPath();
-		final Optional<BBox> currentBox = boundingBox.map(k -> k.getCropBox());
-		final SaveJob saveJob = new SaveJob(labelRangesByIndex, outline, currentBox, inputPath, outputPath, overwrite);
+		final Optional<BBox> currentBox = pdf.getBoundingBoxKeeper().getCropBox();
+		final SaveJob saveJob = new SaveJob(pdf.getLabelRangesByIndex(), pdf.getOutline(), currentBox, inputPath,
+				outputPath, overwrite);
 		submittedJob = executor.submit(new SaverRunnable(saveJob));
 		submittedJobCallback = new SaverRunnableCallback(this, saveJob);
 		Futures.addCallback(submittedJob, submittedJobCallback, savedEventsFiringExecutor);
 		eventBus.post(new StartedSavingEvent());
-	}
-
-	public void setBoundingBox(Optional<BoundingBoxKeeper> boundingBox) {
-		this.boundingBox = requireNonNull(boundingBox);
-	}
-
-	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
-		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
-	}
-
-	public void setOutline(Outline outline) {
-		LOGGER.debug("Setting outline: {}.", requireNonNull(outline));
-		this.outline = Optional.of(outline);
 	}
 
 	public void setOutputPath(Path outputPath) {
@@ -183,6 +150,10 @@ public class Saver {
 			LOGGER.debug("Firing: {}.", event);
 			eventBus.post(event);
 		}
+	}
+
+	public void setPdf(PdfPart pdf) {
+		this.pdf = requireNonNull(pdf);
 	}
 
 	public void setReader(Reader reader) {

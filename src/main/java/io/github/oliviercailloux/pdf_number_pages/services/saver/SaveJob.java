@@ -73,6 +73,10 @@ public class SaveJob {
 		return overwrite;
 	}
 
+	public PdfPart getPdf() {
+		return pdf;
+	}
+
 	@Override
 	public String toString() {
 		final ToStringHelper helper = MoreObjects.toStringHelper(this);

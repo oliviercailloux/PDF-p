@@ -1,6 +1,5 @@
 package io.github.oliviercailloux.pdf_number_pages.services;
 
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
@@ -11,9 +10,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
-import io.github.oliviercailloux.pdf_number_pages.model.Outline;
+import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaveJob;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaverFinishedEvent;
@@ -48,9 +46,7 @@ public class StatusComputer {
 
 	private boolean isSaved;
 
-	private LabelRangesByIndex labelRangesByIndex;
-
-	private Optional<Outline> outline;
+	private PdfPart pdf;
 
 	private Reader reader;
 
@@ -59,11 +55,10 @@ public class StatusComputer {
 	final EventBus eventBus = new EventBus(StatusComputer.class.getCanonicalName());
 
 	public StatusComputer() {
+		pdf = null;
 		isSaved = false;
-		labelRangesByIndex = null;
 		saver = null;
 		reader = null;
-		outline = Optional.empty();
 		hasChanged = false;
 	}
 
@@ -105,16 +100,9 @@ public class StatusComputer {
 		setSavedStatus(event);
 	}
 
-	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
-		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
-		labelRangesByIndex.register(this);
-	}
-
-	public void setOutline(Optional<Outline> outline) {
-		this.outline = requireNonNull(outline);
-		if (outline.isPresent()) {
-			outline.get().register(this);
-		}
+	public void setPdf(PdfPart pdf) {
+		this.pdf = requireNonNull(pdf);
+		pdf.register(this);
 	}
 
 	public void setReader(Reader reader) {
@@ -127,27 +115,25 @@ public class StatusComputer {
 	}
 
 	private void setChangedStatus() {
-		checkState(outline.isPresent());
-		final Optional<ReadEvent> lastReadEvent = reader.getLastReadEvent();
-		if (!lastReadEvent.isPresent()) {
+		final Optional<ReadEvent> lastReadEventOpt = reader.getLastReadEvent();
+		if (!lastReadEventOpt.isPresent()) {
 			return;
 		}
-		final ReadEvent readEvent = lastReadEvent.get();
-		final boolean labelsChanged = !readEvent.getLabelRangesByIndex().equals(labelRangesByIndex);
-		final boolean outlineChanged = !readEvent.getOutline().equals(outline.get());
-		hasChanged = labelsChanged || outlineChanged;
+		final ReadEvent lastReadEvent = lastReadEventOpt.get();
+		final PdfPart readPdf = lastReadEvent.getPdf();
+		hasChanged = pdf.equals(readPdf);
 	}
 
 	private void setSavedStatus(SaverFinishedEvent event) {
 		final boolean wasSaved = isSaved;
 		final SaveJob job = event.getSaveJob();
-		final boolean eqRanges = job.getLabelRangesByIndex().equals(labelRangesByIndex);
-		final boolean eqOutlines = job.getOutline().equals(outline);
+		final PdfPart savedPdf = job.getPdf();
+		final boolean eqPdf = pdf.equals(savedPdf);
 		final boolean eqInp = job.getInputPath().equals(reader.getInputPath());
 		final boolean eqOutp = job.getOutputPath().equals(saver.getOutputPath());
 		final boolean noErr = event.getErrorMessage().isEmpty();
-		isSaved = eqRanges && eqOutlines && eqInp && eqOutp && noErr;
-		LOGGER.debug("Tested equality: {}, {}, {}, {}, {}.", eqRanges, eqOutlines, eqInp, eqOutp, noErr);
+		isSaved = eqPdf && eqInp && eqOutp && noErr;
+		LOGGER.debug("Tested equality: {}, {}, {}, {}.", eqPdf, eqInp, eqOutp, noErr);
 
 		if (wasSaved != isSaved) {
 			eventBus.post(new SavedStatusChanged(isSaved));

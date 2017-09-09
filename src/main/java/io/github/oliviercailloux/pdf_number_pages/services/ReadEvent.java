@@ -1,12 +1,12 @@
 package io.github.oliviercailloux.pdf_number_pages.services;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.MoreObjects;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
+import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
 
 /**
  * Immutable.
@@ -20,29 +20,25 @@ public class ReadEvent {
 
 	private String errorMessageOutline;
 
-	private LabelRangesByIndex labelRangesByIndex;
-
-	/**
-	 * May be <code>null</code>.
-	 */
-	private Outline outline;
-
 	private boolean outlineReadSucceeded;
+
+	private final PdfPart pdf;
 
 	private boolean succeeded;
 
 	public ReadEvent(LabelRangesByIndex labelRangesByIndex, Outline outline, boolean succeeded, String errorMessage,
 			boolean outlineReadSucceeded, String errorMessageOutline) {
+		pdf = new PdfPart();
 		requireNonNull(labelRangesByIndex);
-		checkArgument(!labelRangesByIndex.isEmpty());
 		this.succeeded = succeeded;
 		this.errorMessage = requireNonNull(errorMessage);
 		this.outlineReadSucceeded = outlineReadSucceeded;
 		this.errorMessageOutline = requireNonNull(errorMessageOutline);
-		this.labelRangesByIndex = LabelRangesByIndex.deepImmutableCopy(labelRangesByIndex);
+		pdf.setLabelRangesByIndex(LabelRangesByIndex.deepImmutableCopy(labelRangesByIndex));
 		requireNonNull(outline);
-		this.outline = new Outline();
-		this.outline.addCopies(outline.getChildren());
+		final Outline newOutline = new Outline();
+		newOutline.addCopies(outline.getChildren());
+		pdf.setOutline(newOutline);
 	}
 
 	public String getErrorMessage() {
@@ -54,11 +50,15 @@ public class ReadEvent {
 	}
 
 	public LabelRangesByIndex getLabelRangesByIndex() {
-		return labelRangesByIndex;
+		return pdf.getLabelRangesByIndex();
 	}
 
 	public Outline getOutline() {
-		return outline;
+		return pdf.getOutline().get();
+	}
+
+	public PdfPart getPdf() {
+		return pdf;
 	}
 
 	public boolean outlineReadSucceeded() {

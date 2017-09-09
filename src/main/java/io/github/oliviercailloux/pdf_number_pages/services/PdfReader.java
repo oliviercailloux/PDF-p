@@ -110,12 +110,12 @@ public class PdfReader {
 				read(labels);
 				final PDPageTree pages = document.getPages();
 				for (PDPage page : pages) {
-					LOGGER.info("CB: {}.", page.getCropBox());
+					LOGGER.debug("CB: {}.", page.getCropBox());
 					LOGGER.debug("AB: {}.", page.getArtBox());
 					LOGGER.debug("BB: {}.", page.getBBox());
 					LOGGER.debug("BlB: {}.", page.getBleedBox());
 					LOGGER.debug("TB: {}.", page.getTrimBox());
-					LOGGER.info("MB: {}.", page.getMediaBox());
+					LOGGER.debug("MB: {}.", page.getMediaBox());
 				}
 				final PDDocumentOutline pdOutline = catalog.getDocumentOutline();
 				read(pdOutline);

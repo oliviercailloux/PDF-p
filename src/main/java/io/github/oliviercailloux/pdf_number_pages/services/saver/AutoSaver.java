@@ -3,17 +3,14 @@ package io.github.oliviercailloux.pdf_number_pages.services.saver;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
-import io.github.oliviercailloux.pdf_number_pages.model.Outline;
+import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
 import io.github.oliviercailloux.pdf_number_pages.services.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 
@@ -30,9 +27,7 @@ public class AutoSaver {
 
 	private boolean autoSave;
 
-	private LabelRangesByIndex labelRangesByIndex;
-
-	private Outline outline;
+	private PdfPart pdf;
 
 	private Reader reader;
 
@@ -41,6 +36,7 @@ public class AutoSaver {
 	final EventBus eventBus = new EventBus(AutoSaver.class.getCanonicalName());
 
 	public AutoSaver() {
+		pdf = null;
 		autoSave = false;
 		reader = null;
 		saver = null;
@@ -48,14 +44,6 @@ public class AutoSaver {
 
 	public boolean autoSaves() {
 		return autoSave;
-	}
-
-	public LabelRangesByIndex getLabelRangesByIndex() {
-		return labelRangesByIndex;
-	}
-
-	public Optional<Outline> getOutline() {
-		return Optional.ofNullable(outline);
 	}
 
 	public Reader getReader() {
@@ -94,7 +82,7 @@ public class AutoSaver {
 
 	public void setAutoSave(boolean autoSave) {
 		if (autoSave) {
-			checkState(!labelRangesByIndex.isEmpty());
+			checkState(!pdf.getLabelRangesByIndex().isEmpty());
 		}
 		final boolean wasAuto = this.autoSave;
 		this.autoSave = autoSave;
@@ -104,16 +92,9 @@ public class AutoSaver {
 		}
 	}
 
-	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
-		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
-		labelRangesByIndex.register(this);
-	}
-
-	public void setOutline(Outline outline) {
-		this.outline = outline;
-		if (this.outline != null) {
-			this.outline.register(this);
-		}
+	public void setPdf(PdfPart pdf) {
+		this.pdf = requireNonNull(pdf);
+		pdf.register(this);
 	}
 
 	public void setReader(Reader reader) {
@@ -128,7 +109,7 @@ public class AutoSaver {
 
 	private void savePerhaps() {
 		if (autoSave) {
-			assert !labelRangesByIndex.isEmpty();
+			assert !pdf.getLabelRangesByIndex().isEmpty();
 			saver.save();
 		}
 	}

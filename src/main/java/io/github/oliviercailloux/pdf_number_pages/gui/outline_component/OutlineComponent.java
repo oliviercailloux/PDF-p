@@ -3,19 +3,26 @@ package io.github.oliviercailloux.pdf_number_pages.gui.outline_component;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
 
 import org.eclipse.jface.layout.TreeColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
@@ -24,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.Ints;
 
 import io.github.oliviercailloux.pdf_number_pages.model.IOutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
@@ -42,13 +50,20 @@ public class OutlineComponent {
 
 	private Label label;
 
+	@SuppressWarnings("unused")
+	private final Color NOT_VALID_COLOR;
+
 	private Composite outlineComposite;
 
 	private Reader reader;
 
+	private KeyAdapter tableKeyListener;
+
 	private Tree tree;
 
 	private Composite treeComposite;
+
+	Clipboard clipboard;
 
 	LabelRangesByIndex labelRangesByIndex;
 
@@ -64,6 +79,9 @@ public class OutlineComponent {
 		label = null;
 		outlineComposite = null;
 		labelRangesByIndex = null;
+		tableKeyListener = null;
+		clipboard = null;
+		NOT_VALID_COLOR = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
 	}
 
 	public LabelRangesByIndex getLabelRangesByIndex() {
@@ -79,35 +97,6 @@ public class OutlineComponent {
 	}
 
 	public void init(Composite parent) {
-		initTree(parent);
-		initViewer();
-	}
-
-	@Subscribe
-	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
-		setText();
-		LOGGER.debug("Model changed, refreshing viewer.");
-		viewer.refresh();
-	}
-
-	@Subscribe
-	public void readEvent(@SuppressWarnings("unused") ReadEvent event) {
-		setText();
-	}
-
-	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
-		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
-	}
-
-	public void setOutline(Outline outline) {
-		this.outline = requireNonNull(outline);
-	}
-
-	public void setReader(Reader reader) {
-		this.reader = requireNonNull(reader);
-	}
-
-	private void initTree(Composite parent) {
 		outlineComposite = new Composite(parent, SWT.NONE);
 		final GridData layoutOCData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		outlineComposite.setLayoutData(layoutOCData);
@@ -115,8 +104,11 @@ public class OutlineComponent {
 		layout.marginHeight = 0;
 		layout.marginWidth = 0;
 		outlineComposite.setLayout(layout);
+
 		label = new Label(outlineComposite, SWT.NONE);
 		label.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		label.setForeground(NOT_VALID_COLOR);
+
 		treeComposite = new Composite(outlineComposite, SWT.NONE);
 		treeComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		final TreeColumnLayout treeLayout = new TreeColumnLayout(true);
@@ -138,7 +130,55 @@ public class OutlineComponent {
 			col.setText("Page label");
 			treeLayout.setColumnData(col, new ColumnWeightData(0, 100, true));
 		}
+
+		clipboard = new Clipboard(outlineComposite.getDisplay());
+
+		initViewer();
+	}
+
+	@Subscribe
+	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
+		LOGGER.debug("Model changed, refreshing viewer.");
+		viewer.refresh();
+	}
+
+	@Subscribe
+	public void readEvent(@SuppressWarnings("unused") ReadEvent event) {
 		setText();
+	}
+
+	public void setKeyListenerEnabled(boolean enabled) {
+		/**
+		 * We should NOT fiddle with key listeners while a key event is processed,
+		 * otherwise, it makes SWT send the same (already processed) event again. Thus,
+		 * this method should not be called on model change.
+		 */
+		LOGGER.debug("Setting key listener: {} (currently {}).", enabled ? "Enabled" : "Disabled",
+				tree.getListeners(SWT.KeyDown).length);
+		if (enabled) {
+			/**
+			 * We have to remove it just in case it was already registered, to avoid double
+			 * registration.
+			 */
+			tree.removeKeyListener(tableKeyListener);
+			tree.addKeyListener(tableKeyListener);
+		} else {
+			tree.removeKeyListener(tableKeyListener);
+		}
+		LOGGER.debug("Set key listener: {} (currently {}).", enabled ? "Enabled" : "Disabled",
+				tree.getListeners(SWT.KeyDown));
+	}
+
+	public void setLabelRangesByIndex(LabelRangesByIndex labelRangesByIndex) {
+		this.labelRangesByIndex = requireNonNull(labelRangesByIndex);
+	}
+
+	public void setOutline(Outline outline) {
+		this.outline = requireNonNull(outline);
+	}
+
+	public void setReader(Reader reader) {
+		this.reader = requireNonNull(reader);
 	}
 
 	private void initViewer() {
@@ -160,21 +200,24 @@ public class OutlineComponent {
 		viewer.setInput(outline);
 		viewer.refresh();
 
-		final KeyAdapter tableKeyListener = new KeyAdapter() {
+		tableKeyListener = new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				LOGGER.trace("Received: {}.", e);
+				LOGGER.debug("Received: {}.", e);
 				if (e.character == SWT.DEL) {
 					final IStructuredSelection sel = viewer.getStructuredSelection();
 					for (Object o : sel.toList()) {
+						LOGGER.info("Proceeding on {}.", o);
 						final OutlineNode toDelete = (OutlineNode) o;
 						toDelete.getParent().get().remove(toDelete.getLocalOrder().get().intValue());
 					}
 					e.doit = false;
+					clearError();
 				} else if (e.character == '+') {
 					LOGGER.debug("Pressed plus.");
 					final IStructuredSelection sel = viewer.getStructuredSelection();
 					for (Object o : sel.toList()) {
+						LOGGER.info("Proceeding on {}.", o);
 						final OutlineNode selected = (OutlineNode) o;
 						final OutlineNode newOutline = OutlineNode.newOutline(
 								new PdfBookmark("Title", selected.getBookmark().get().getPhysicalPageNumber() + 1));
@@ -185,6 +228,7 @@ public class OutlineComponent {
 						outline.addAsLastChild(newOutline);
 					}
 					e.doit = false;
+					clearError();
 				} else if (e.keyCode == SWT.ARROW_RIGHT) {
 					final IStructuredSelection sel = viewer.getStructuredSelection();
 					final List<OutlineNode> toExpand = Lists.newLinkedList();
@@ -206,6 +250,7 @@ public class OutlineComponent {
 					}
 					viewer.setExpandedElements(toExpand.toArray());
 					e.doit = false;
+					clearError();
 				} else if (e.keyCode == SWT.ARROW_LEFT) {
 					final IStructuredSelection sel = viewer.getStructuredSelection();
 					final List<OutlineNode> toExpand = Lists.newLinkedList();
@@ -244,30 +289,130 @@ public class OutlineComponent {
 					}
 					viewer.setExpandedElements(toExpand.toArray());
 					e.doit = false;
+					clearError();
+				} else if (((e.stateMask & SWT.CTRL) == SWT.CTRL) && (e.keyCode == 'v')) {
+					LOGGER.debug("Paste key.");
+					final TextTransfer transfer = TextTransfer.getInstance();
+					final String contents = (String) clipboard.getContents(transfer);
+					if (contents == null) {
+						return;
+					}
+					final List<String> lines = Arrays.asList(contents.split("[\r\n]+"));
+					if (lines.size() > 50) {
+						showError("> 50 lines of text.");
+						return;
+					}
+					final IStructuredSelection sel = viewer.getStructuredSelection();
+					final List<OutlineNode> toSelect = Lists.newLinkedList();
+					final List<Optional<OutlineNode>> selectedOutlines = Lists.newLinkedList();
+					for (Object o : sel.toList()) {
+						final OutlineNode selected = (OutlineNode) o;
+						final Optional<OutlineNode> selectedOpt = Optional.of(selected);
+						selectedOutlines.add(selectedOpt);
+					}
+					if (sel.isEmpty()) {
+						selectedOutlines.add(Optional.empty());
+					}
+					for (Optional<OutlineNode> selectedOpt : selectedOutlines) {
+						LOGGER.debug("Proceeding on {}.", selectedOpt);
+						final int defaultPageNumber;
+						if (selectedOpt.isPresent()) {
+							defaultPageNumber = selectedOpt.get().getBookmark().get().getPhysicalPageNumber() + 1;
+						} else {
+							defaultPageNumber = 1;
+						}
+						Optional<OutlineNode> anchor = selectedOpt;
+						for (String line : lines) {
+							LOGGER.debug("Proceeding on {}.", line);
+							final Optional<OutlineNode> newOutlineOpt = asOutlineNode(line, defaultPageNumber);
+							if (!newOutlineOpt.isPresent()) {
+								return;
+							}
+							final OutlineNode newOutline = newOutlineOpt.get();
+							LOGGER.debug("Created {}.", newOutline);
+							if (anchor.isPresent()) {
+								newOutline.setAsNextSiblingOf(anchor.get());
+							} else {
+								outline.addAsLastChild(newOutline);
+							}
+							LOGGER.debug("Added {}.", newOutline);
+							anchor = Optional.of(newOutline);
+							toSelect.add(newOutline);
+						}
+					}
+					viewer.setSelection(new StructuredSelection(toSelect.toArray()));
+					clearError();
+				} else {
+					clearError();
 				}
 			}
 		};
-		tree.addKeyListener(tableKeyListener);
+
+		setText();
+
 	}
 
 	private void setText() {
 		LOGGER.debug("Setting text to: {}.", outline);
+		final boolean enabled;
 		if (reader.getLastReadEvent().isPresent()) {
 			final ReadEvent readEvent = reader.getLastReadEvent().get();
 			if (readEvent.outlineReadSucceeded()) {
-				label.setVisible(false);
-				((GridData) label.getLayoutData()).exclude = true;
+				clearError();
+				enabled = true;
 			} else {
-				label.setVisible(true);
-				((GridData) label.getLayoutData()).exclude = false;
-				LOGGER.info("Setting outline error.");
-				label.setText(!readEvent.getErrorMessage().isEmpty() ? readEvent.getErrorMessage()
-						: readEvent.getErrorMessageOutline());
+				final String error = !readEvent.getErrorMessage().isEmpty() ? readEvent.getErrorMessage()
+						: readEvent.getErrorMessageOutline();
+				showError(error);
+				enabled = false;
 			}
 		} else {
-			label.setVisible(true);
-			((GridData) label.getLayoutData()).exclude = false;
-			label.setText("Not read yet.");
+			showError("Not read yet.");
+			enabled = false;
 		}
+		setKeyListenerEnabled(enabled);
+	}
+
+	Optional<OutlineNode> asOutlineNode(String bookmarkStr, int defaultPageNumber) {
+		final Optional<OutlineNode> newOutlineOpt;
+		final int indexTab = bookmarkStr.lastIndexOf('\t');
+		final String title;
+		final int page;
+		if (indexTab == -1) {
+			title = bookmarkStr;
+			page = defaultPageNumber;
+			newOutlineOpt = Optional.of(OutlineNode.newOutline(new PdfBookmark(title, page)));
+		} else if (indexTab == bookmarkStr.length() - 1) {
+			showError("I do not understand '" + bookmarkStr + "'.");
+			newOutlineOpt = Optional.empty();
+		} else {
+			final Integer parsedPage = Ints.tryParse(bookmarkStr.substring(indexTab + 1));
+			if (parsedPage == null) {
+				showError("I do not understand '" + bookmarkStr + "'.");
+				newOutlineOpt = Optional.empty();
+			} else {
+				title = bookmarkStr.substring(0, indexTab);
+				/** User input is probably 1-based, our index is 0-based */
+				page = parsedPage.intValue() - 1;
+				newOutlineOpt = Optional.of(OutlineNode.newOutline(new PdfBookmark(title, page)));
+			}
+		}
+		return newOutlineOpt;
+	}
+
+	void clearError() {
+		label.setVisible(false);
+		((GridData) label.getLayoutData()).exclude = true;
+		outlineComposite.layout();
+	}
+
+	void showError(String error) {
+		assert error != null;
+		assert !error.isEmpty();
+		label.setVisible(true);
+		((GridData) label.getLayoutData()).exclude = false;
+		LOGGER.info("Setting outline error.");
+		label.setText(error);
+		outlineComposite.layout();
 	}
 }
