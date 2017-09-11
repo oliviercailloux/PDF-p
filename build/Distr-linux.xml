@@ -12,10 +12,6 @@
 		<file>
 			<source>LICENSE</source>
 		</file>
-<!-- 		<file> -->
-<!-- 			<source>build/launch</source> -->
-<!-- 			<fileMode>0740</fileMode> -->
-<!-- 		</file> -->
 	</files>
 	<dependencySets>
 		<dependencySet>

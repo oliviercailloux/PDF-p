@@ -1,0 +1,25 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+	<id>distr-${env}</id>
+	<formats>
+		<format>zip</format>
+	</formats>
+	<files>
+		<file>
+			<source>target/${project.artifactId}-${project.version}.jar</source>
+		</file>
+		<file>
+			<source>LICENSE</source>
+		</file>
+	</files>
+	<dependencySets>
+		<dependencySet>
+			<useProjectArtifact>false</useProjectArtifact>
+			<outputDirectory>lib</outputDirectory>
+			<excludes>
+				<exclude>org.eclipse.platform:org.eclipse.swt.gtk.linux.x86_64</exclude>
+			</excludes>
+		</dependencySet>
+	</dependencySets>
+</assembly>

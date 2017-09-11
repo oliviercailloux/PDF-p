@@ -50,9 +50,12 @@
 						<version>3.1.0</version>
 						<configuration>
 							<descriptors>
-								<descriptor>build/Runnable.xml</descriptor>
+								<descriptor>build/Distr-${env}.xml</descriptor>
 							</descriptors>
 						</configuration>
+						<!-- TODO: one config per output: distr-linux, distr-win, distr-mac 
+							(we need different ouptut names), skip other profile thingy. Exclude inexistant: 
+							triggers warning. -->
 						<executions>
 							<execution>
 								<id>make-assembly</id>
