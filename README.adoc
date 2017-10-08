@@ -4,27 +4,38 @@ image:https://travis-ci.org/oliviercailloux/PDF-Number-pages.svg?branch=master["
 
 To start the application, just expand and double-click the main jar file. Alternatively, run: `java -jar pdf-number-pages.jar`. No installation is required.
 
-== Log
+== Techical documentation
+=== Log
 In case of problems: here is how to change the log verbosity. (See Logback https://logback.qos.ch/manual/configuration.html[manual].)
 
-* Download a sample Logback configuration file https://github.com/oliviercailloux/PDF-Number-pages/blob/master/src/test/resources/logback-test.xml[here].
+* Download a sample Logback configuration file https://github.com/oliviercailloux/PDF-Number-pages/blob/master/src/main/resources/logback-test.xml[here].
 * (Optional) Tweak it according to your needs, e.g. change the log levels.
 * Start the application with the system property `logback.configurationFile` pointing to the file.
 (You must give the full path, otherwise Logback considers the pointer as a classpath resource path.)
 ** Example: `java "-Dlogback.configurationFile=/home/…/logback.xml" -jar …/pdf-number-pages.jar`.
 * You may also add `"-Dlogback.statusListenerClass=ch.qos.logback.core.status.OnConsoleStatusListener"` to see where Logback looks for configuration instructions.
 
-== Techical documentation
-gs -sDEVICE=bbox -dBATCH -dNOPAUSE -c save pop -f B.pdf
-%%BoundingBox: 161 519 380 594
+=== Obtain bounding boxes
+Here is how to obtain current bounding boxes in a PDF file (tested under Linux).
 
-pdfinfo -box B.pdf
+`gs -sDEVICE=bbox -dBATCH -dNOPAUSE -c save pop -f InputFile.pdf`
+
+Sample output: `%%BoundingBox: 161 519 380 594`.
+
+`pdfinfo -box InputFile.pdf`
+
+Sample output:
+....
 Page size:      439.37 x 666.142 pts
 MediaBox:           0.00     0.00   439.37   666.14
 CropBox:            0.00     0.00   439.37   666.14
 BleedBox:           0.00     0.00   439.37   666.14
 TrimBox:            0.00     0.00   439.37   666.14
 ArtBox:             0.00     0.00   439.37   666.14
+....
+
+=== Quit program
+When opening a pdf viewer instance from this software, then closing this software’s main window, this software process stays in memory until the viewer is closed as well. This is probably due to the viewer being a child process of this software. I don’t know how to avoid this effect. Write to me if you know more. (Observed on my Linux system. Please tell me about other systems.)
 
 == Credits
 https://www.flaticon.com/free-icon/phonebook_129661[Icon] made by http://www.freepik.com/[Freepik] from http://www.flaticon.com[www.flaticon.com].
