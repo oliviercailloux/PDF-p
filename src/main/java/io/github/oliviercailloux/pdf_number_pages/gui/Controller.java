@@ -145,50 +145,6 @@ public class Controller {
 		icon = null;
 	}
 
-	public void createLabels() {
-		{
-			final PDPageLabelRangeWithEquals r = new PDPageLabelRangeWithEquals();
-			r.setStart(1);
-			r.setStyle(PDPageLabelRange.STYLE_ROMAN_LOWER);
-			pdf.getLabelRangesByIndex().put(0, r);
-		}
-		{
-			final PDPageLabelRangeWithEquals r = new PDPageLabelRangeWithEquals();
-			r.setStart(1);
-			r.setStyle(PDPageLabelRange.STYLE_DECIMAL);
-			pdf.getLabelRangesByIndex().put(15, r);
-		}
-		{
-			final PDPageLabelRangeWithEquals r = new PDPageLabelRangeWithEquals();
-			r.setStart(1);
-			r.setStyle(PDPageLabelRange.STYLE_DECIMAL);
-			pdf.getLabelRangesByIndex().put(25, r);
-		}
-		{
-			final PDPageLabelRangeWithEquals r = new PDPageLabelRangeWithEquals();
-			r.setStart(1);
-			r.setStyle(PDPageLabelRange.STYLE_DECIMAL);
-			pdf.getLabelRangesByIndex().put(35, r);
-		}
-	}
-
-	public void createLabelsAndOutline() {
-		createLabels();
-		final PDDocumentOutline pdoutline = new PDDocumentOutline();
-		{
-			final PDOutlineItem item = new PDOutlineItem();
-			pdoutline.addLast(item);
-			item.setTitle("Preface to the Second Edition");
-			final PDPageFitWidthDestination dest = new PDPageFitWidthDestination();
-			dest.setPageNumber(6);
-			item.setDestination(dest);
-		}
-//		final Path inputPath = inputOutputComponent.getInputPath().get();
-//		final Path outputPath = inputOutputComponent.getOutputPath();
-//		labelRangesOperator.setOverwrite(true);
-//		labelRangesOperator.saveLabelRanges(inputPath, outputPath, labelRangesByIndex);
-	}
-
 	public void fireView() {
 		shell.pack();
 		shell.open();
@@ -199,22 +155,6 @@ public class Controller {
 			}
 		}
 		display.dispose();
-	}
-
-	public boolean getAutoSave() {
-		return autoSaver.autoSaves();
-	}
-
-	public InputOutputComponent getInputOutputComponent() {
-		return requireNonNull(inputOutputComponent);
-	}
-
-	public Saver getSaver() {
-		return saver;
-	}
-
-	public Shell getShell() {
-		return requireNonNull(shell);
 	}
 
 	public void initGui() {
