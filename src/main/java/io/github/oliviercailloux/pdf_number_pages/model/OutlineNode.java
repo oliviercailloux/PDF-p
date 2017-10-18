@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.eventbus.Subscribe;
 
 /**
@@ -133,6 +134,19 @@ public class OutlineNode implements IOutlineNode {
 		return Outline.areEqual(this, n2);
 	}
 
+	@Override
+	public List<IOutlineNode> getAscendants() {
+		final List<IOutlineNode> ascendants;
+		if (parent == null) {
+			ascendants = Lists.newLinkedList();
+		} else {
+			ascendants = parent.getAscendants();
+		}
+		ascendants.add(this);
+
+		return ascendants;
+	}
+
 	public Optional<PdfBookmark> getBookmark() {
 		return Optional.of(bookmark);
 	}
@@ -159,6 +173,11 @@ public class OutlineNode implements IOutlineNode {
 
 	@Subscribe
 	public void modelChanged(ModelChanged event) {
+		delegate.post(event);
+	}
+
+	@Subscribe
+	public void outlineChanged(@SuppressWarnings("unused") OutlineChanged event) {
 		delegate.post(event);
 	}
 

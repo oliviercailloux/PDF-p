@@ -10,6 +10,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.model.OutlineChanged;
 import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
 import io.github.oliviercailloux.pdf_number_pages.services.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
@@ -62,6 +63,12 @@ public class AutoSaver {
 
 	@Subscribe
 	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
+		LOGGER.debug("Model changed, saving perhaps.");
+		savePerhaps();
+	}
+
+	@Subscribe
+	public void outlineChanged(@SuppressWarnings("unused") OutlineChanged event) {
 		LOGGER.debug("Model changed, saving perhaps.");
 		savePerhaps();
 	}

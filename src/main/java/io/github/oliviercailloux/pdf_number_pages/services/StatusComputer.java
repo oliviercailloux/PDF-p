@@ -11,6 +11,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.model.OutlineChanged;
 import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.SaveJob;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
@@ -83,6 +84,16 @@ public class StatusComputer {
 
 	@Subscribe
 	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
+		final Optional<SaverFinishedEvent> lastSaveJobResult = saver.getLastFinishedJobResult();
+		LOGGER.debug("Model changed: {}.", event);
+		if (lastSaveJobResult.isPresent()) {
+			setSavedStatus(lastSaveJobResult.get());
+		}
+		setChangedStatus();
+	}
+
+	@Subscribe
+	public void outlineChanged(@SuppressWarnings("unused") OutlineChanged event) {
 		final Optional<SaverFinishedEvent> lastSaveJobResult = saver.getLastFinishedJobResult();
 		LOGGER.debug("Model changed: {}.", event);
 		if (lastSaveJobResult.isPresent()) {

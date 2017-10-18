@@ -37,6 +37,7 @@ import io.github.oliviercailloux.pdf_number_pages.model.IOutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
+import io.github.oliviercailloux.pdf_number_pages.model.OutlineChanged;
 import io.github.oliviercailloux.pdf_number_pages.model.OutlineNode;
 import io.github.oliviercailloux.pdf_number_pages.model.PdfBookmark;
 import io.github.oliviercailloux.pdf_number_pages.services.ReadEvent;
@@ -143,6 +144,30 @@ public class OutlineComponent {
 	}
 
 	@Subscribe
+	public void outlineChanged(OutlineChanged event) {
+		/**
+		 * This is irremediably flawed because of SWT, AFAIU. The tree could have
+		 * duplicated (equal) elements, including thus duplicated tree paths. I see no
+		 * way to systematically remove the right one. We must remove one anyway,
+		 * because just refreshing the viewer sometimes leaves spurious elements at the
+		 * bottom of the view, that are no more in the model.
+		 */
+		viewer.remove(event.getParent(), event.getChildNb());
+		/**
+		 * We need to refresh in order to make sure the viewer has correct data, because
+		 * of the above remark.
+		 */
+		viewer.refresh();
+		/**
+		 * TODO no, the evoqued case fails anyway: no way to distinguish the right
+		 * element even when deleting it (from the selection). The wrong element gets
+		 * deleted even in the model. (Then it seems the refresh bug is triggered
+		 * anyway, which I believe is linked to the presence of multiple equal
+		 * elements.)
+		 */
+	}
+
+	@Subscribe
 	public void readEvent(@SuppressWarnings("unused") ReadEvent event) {
 		setText();
 	}
@@ -204,10 +229,11 @@ public class OutlineComponent {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				LOGGER.debug("Received: {}.", e);
+				LOGGER.debug("Outline: {}.", outline);
 				if (e.character == SWT.DEL) {
 					final IStructuredSelection sel = viewer.getStructuredSelection();
 					for (Object o : sel.toList()) {
-						LOGGER.info("Proceeding on {}.", o);
+						LOGGER.debug("Deleting {}.", o);
 						final OutlineNode toDelete = (OutlineNode) o;
 						toDelete.getParent().get().remove(toDelete.getLocalOrder().get().intValue());
 					}
@@ -217,7 +243,7 @@ public class OutlineComponent {
 					LOGGER.debug("Pressed plus.");
 					final IStructuredSelection sel = viewer.getStructuredSelection();
 					for (Object o : sel.toList()) {
-						LOGGER.info("Proceeding on {}.", o);
+						LOGGER.debug("Proceeding on {}.", o);
 						final OutlineNode selected = (OutlineNode) o;
 						final OutlineNode newOutline = OutlineNode.newOutline(
 								new PdfBookmark("Title", selected.getBookmark().get().getPhysicalPageNumber() + 1));
@@ -345,6 +371,7 @@ public class OutlineComponent {
 				} else {
 					clearError();
 				}
+				LOGGER.debug("Outline: {}.", outline);
 			}
 		};
 

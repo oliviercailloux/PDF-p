@@ -1,5 +1,7 @@
 package io.github.oliviercailloux.pdf_number_pages.gui.outline_component;
 
+import java.util.List;
+
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,15 +20,17 @@ public class OutlineTreeContentProvider implements ITreeContentProvider {
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		final OutlineNode outline = (OutlineNode) parentElement;
-		LOGGER.debug("Returning children of {}.", parentElement);
-		return Iterables.toArray(outline.getChildren(), OutlineNode.class);
+		final List<OutlineNode> children = outline.getChildren();
+		LOGGER.debug("Returning children of {}: {}.", parentElement, children);
+		return Iterables.toArray(children, OutlineNode.class);
 	}
 
 	@Override
 	public Object[] getElements(Object inputElement) {
 		final Outline outline = (Outline) inputElement;
-		LOGGER.debug("Returning elements of {}.", inputElement);
-		return Iterables.toArray(outline.getChildren(), OutlineNode.class);
+		final List<OutlineNode> children = outline.getChildren();
+		LOGGER.debug("Returning elements of {}: {}.", inputElement, children);
+		return Iterables.toArray(children, OutlineNode.class);
 	}
 
 	@Override

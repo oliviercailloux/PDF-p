@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -60,10 +59,6 @@ public class CropComponent {
 			}
 
 		};
-		final VerifyListener listener = e -> {
-			LOGGER.info("Verifying '{}'.", e.text);
-			e.doit = e.text.matches("[-]?[0-9]*");
-		};
 		{
 			final Label label = new Label(composite, SWT.NONE);
 			label.setText("Left");
@@ -72,7 +67,6 @@ public class CropComponent {
 		left = new Text(composite, SWT.NONE);
 		left.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		left.addModifyListener(inputChecker);
-		left.addVerifyListener(listener);
 		{
 			final Label label = new Label(composite, SWT.NONE);
 			label.setText("Bottom");
@@ -81,29 +75,24 @@ public class CropComponent {
 		bottom = new Text(composite, SWT.NONE);
 		bottom.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		bottom.addModifyListener(inputChecker);
-		bottom.addVerifyListener(listener);
 		{
 			final Label label = new Label(composite, SWT.NONE);
-			label.setText("Right");
+			label.setText("Width");
 			label.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
 		}
 		right = new Text(composite, SWT.NONE);
 		right.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		right.addModifyListener(inputChecker);
-		right.addVerifyListener(listener);
 		{
 			final Label label = new Label(composite, SWT.NONE);
-			label.setText("Top");
+			label.setText("Height");
 			label.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
 		}
 		top = new Text(composite, SWT.NONE);
 		top.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		top.addModifyListener(inputChecker);
-		top.addVerifyListener(listener);
 
 		checkInput();
-		/** FIXME forbid strings equal to "-", … */
-//		setFirstLevelValidator(v -> !v.matches("[-−]?[0-9]*") ? "Integer required." : null);
 	}
 
 	public void setBoundingBoxKeeper(BoundingBoxKeeper boundingBoxKeeper) {
@@ -112,11 +101,10 @@ public class CropComponent {
 
 	private Float asFloatAndFeedback(Text text) {
 		final Float nb = Floats.tryParse(text.getText());
-		/** Ugly result. */
 		if (nb == null) {
-			text.setBackground(NOT_VALID_COLOR);
+			text.setForeground(NOT_VALID_COLOR);
 		} else {
-			text.setBackground(null);
+			text.setForeground(null);
 		}
 		return nb;
 	}

@@ -21,6 +21,7 @@ import com.google.common.eventbus.Subscribe;
 
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.ModelChanged;
+import io.github.oliviercailloux.pdf_number_pages.model.OutlineChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.InputPathChanged;
 import io.github.oliviercailloux.pdf_number_pages.services.ReadEvent;
 import io.github.oliviercailloux.pdf_number_pages.services.saver.AutoSaveChanged;
@@ -134,6 +135,12 @@ public class SaveOptionsComponent {
 
 	@Subscribe
 	public void modelChanged(@SuppressWarnings("unused") ModelChanged event) {
+		assert Display.getCurrent() != null;
+		setSaveButtonsEnabled();
+	}
+
+	@Subscribe
+	public void outlineChanged(@SuppressWarnings("unused") OutlineChanged event) {
 		assert Display.getCurrent() != null;
 		setSaveButtonsEnabled();
 	}

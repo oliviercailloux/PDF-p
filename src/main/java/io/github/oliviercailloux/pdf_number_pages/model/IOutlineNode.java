@@ -9,6 +9,17 @@ public interface IOutlineNode {
 
 	public void addChild(int pos, OutlineNode outline);
 
+	/**
+	 * Not currently used. Though conceptually useful to distinguish equal nodes in
+	 * a tree. Example: {(root, A1), (root, A2), (A1, B), (A2, B)}, with
+	 * A1.equals(A2). With the ascendants plus the local order we get unique
+	 * positions in the tree.
+	 *
+	 * @return not <code>null</code>, empty iff this node has no parent, modifiable,
+	 *         does not write back.
+	 */
+	public List<IOutlineNode> getAscendants();
+
 	public List<OutlineNode> getChildren();
 
 	public Optional<IOutlineNode> getParent();

@@ -18,8 +18,15 @@ public class EditingSupportIndex extends IntEditingSupport<Integer> {
 
 	public EditingSupportIndex(ColumnViewer viewer) {
 		super(viewer, Integer.class);
-		/** This prevents ints out of range, such as negative ones. */
-		setIntegerValidator(intValue -> labelRangesByIndex.containsKey(intValue - 1) ? "Index must be unique." : null);
+		setIntegerValidator(intValue -> {
+			if (intValue <= 0) {
+				return "Index must be positive.";
+			}
+			if (labelRangesByIndex.containsKey(intValue - 1)) {
+				return "Index must be unique.";
+			}
+			return null;
+		});
 		labelRangesByIndex = null;
 	}
 

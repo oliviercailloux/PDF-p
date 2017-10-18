@@ -54,12 +54,14 @@ public class Controller {
 	static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
 	public static void main(String[] args) throws Exception {
+		LOGGER.info("Start soft.");
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
 
 		final Controller app = new Controller();
 //		app.createLabelsAndOutline();
 		app.proceed();
+		/** FIXME delete stuff, the last item gets duplicated! */
 	}
 
 	private AutoSaver autoSaver;
@@ -191,6 +193,7 @@ public class Controller {
 	public void fireView() {
 		shell.pack();
 		shell.open();
+		LOGGER.info("Shell opened.");
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
@@ -266,22 +269,12 @@ public class Controller {
 	}
 
 	public void proceed() {
-		/**
-		 * FIXME Slow copmputer. Start GUI, immediately close. The close event is
-		 * processed before the setOverwrite. The setoverwrite is processed just before
-		 * closing, as part of the close, and fails as there’s no display any more.
-		 */
-		LOGGER.info("Start init.");
+		LOGGER.info("Start proceed.");
 		/**
 		 * At this stage, the model and services are initialized. We change the model
 		 * here. So that the change events are not processed by the GUI. When the GUI is
 		 * initialized (just after), it sees the right values from the start, thus
 		 * avoiding a refresh that would be visible by the end-user.
-		 */
-		/** FIXME the start height depends on the content of the panels. */
-		/**
-		 * FIXME Set a non-existent file, ⇒ the GUI does not show any error, no, it
-		 * shows, but not very visible.
 		 */
 		reader.setInputPath(Paths.get(
 				"/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Springer, with structure.pdf"));
@@ -291,17 +284,11 @@ public class Controller {
 			autoSaver.setAutoSave(true);
 		}
 
+		LOGGER.info("Start init.");
 		initGui();
-		/**
-		 * FIXME First: why does it save auto when changing outline, even though save
-		 * status change is not yet implemented?
-		 */
-		/**
-		 * FIXME open a pdf, quit this program: it quits only when the pdf viewer is
-		 * closed?
-		 */
 		LOGGER.info("Finished init.");
 		fireView();
+		/** TODO check how fast it starts in target env. */
 	}
 
 	public void register(Object listener) {

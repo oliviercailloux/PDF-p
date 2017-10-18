@@ -38,7 +38,11 @@ import com.google.common.eventbus.Subscribe;
  * parent (a data-node-with-parent) and local order number. (Required for GUI
  * implementation.) A node-with-data may belong to several data-node-with-parent
  * s. Conceptually, a node-with-parent, that encapsulates a node, may exist, but
- * is probably never needed.
+ * is probably never needed. It is not sufficient for two nodes to be equal to
+ * have same children and data: this leads to a parent having possibly several
+ * equal children, but that still need to be conceptually distinguished, which
+ * e.g. makes viewer.remove(element) in SWT fail. (Or we could consider that it
+ * is ok, as in a list.)
  *
  * @author Olivier Cailloux
  *
@@ -149,6 +153,11 @@ public class Outline implements IOutlineNode {
 	}
 
 	@Override
+	public List<IOutlineNode> getAscendants() {
+		return Lists.newLinkedList();
+	}
+
+	@Override
 	public List<OutlineNode> getChildren() {
 		return Collections.unmodifiableList(children);
 	}
@@ -169,6 +178,11 @@ public class Outline implements IOutlineNode {
 		post(event);
 	}
 
+	@Subscribe
+	public void outlineChanged(OutlineChanged event) {
+		post(event);
+	}
+
 	@Override
 	public void register(Object object) {
 		eventBus.register(object);
@@ -177,7 +191,9 @@ public class Outline implements IOutlineNode {
 	@Override
 	public void remove(int childNb) {
 		final OutlineNode child = children.remove(childNb);
-		assert child.getParent().isPresent();
+		final Optional<IOutlineNode> parentOpt = child.getParent();
+		assert parentOpt.isPresent();
+		final IOutlineNode parent = parentOpt.get();
 		/** Example: we remove element of index 0. */
 		final int pos = child.getLocalOrder().get();
 		assert pos == childNb;
@@ -198,7 +214,7 @@ public class Outline implements IOutlineNode {
 		}
 		child.removeParent();
 		child.unregister(this);
-		post();
+		post(OutlineChanged.newOutlineChanged(OutlineOperation.REMOVE, parent, childNb));
 	}
 
 	@Override
@@ -230,6 +246,14 @@ public class Outline implements IOutlineNode {
 
 	void post(ModelChanged event) {
 		if (postEnabled) {
+			LOGGER.debug("Posting {}.", event);
+			eventBus.post(event);
+		}
+	}
+
+	void post(OutlineChanged event) {
+		if (postEnabled) {
+			LOGGER.debug("Posting {}.", event);
 			eventBus.post(event);
 		}
 	}
