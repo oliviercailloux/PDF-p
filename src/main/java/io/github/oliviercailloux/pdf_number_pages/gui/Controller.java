@@ -61,7 +61,6 @@ public class Controller {
 		final Controller app = new Controller();
 //		app.createLabelsAndOutline();
 		app.proceed();
-		/** FIXME delete stuff, the last item gets duplicated! */
 	}
 
 	private AutoSaver autoSaver;
