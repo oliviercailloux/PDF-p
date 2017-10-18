@@ -1,6 +1,6 @@
-= PDF Number pages
+= PDF-p
 
-image:https://travis-ci.org/oliviercailloux/PDF-Number-pages.svg?branch=master["Build Status", link="https://travis-ci.org/oliviercailloux/PDF-Number-pages"]
+image:https://travis-ci.org/oliviercailloux/PDF-p.svg?branch=master["Build Status", link="https://travis-ci.org/oliviercailloux/PDF-p"]
 
 To start the application, just expand and double-click the main jar file. Alternatively, run: `java -jar pdf-number-pages.jar`. No installation is required.
 
@@ -8,7 +8,7 @@ To start the application, just expand and double-click the main jar file. Altern
 === Log
 In case of problems: here is how to change the log verbosity. (See Logback https://logback.qos.ch/manual/configuration.html[manual].)
 
-* Download a sample Logback configuration file https://github.com/oliviercailloux/PDF-Number-pages/blob/master/src/main/resources/logback-test.xml[here].
+* Download a sample Logback configuration file https://github.com/oliviercailloux/PDF-p/blob/master/src/main/resources/logback-test.xml[here].
 * (Optional) Tweak it according to your needs, e.g. change the log levels.
 * Start the application with the system property `logback.configurationFile` pointing to the file.
 (You must give the full path, otherwise Logback considers the pointer as a classpath resource path.)
