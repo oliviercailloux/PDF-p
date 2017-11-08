@@ -16,6 +16,8 @@ cache:
 before_deploy:
 # Important to clean before packaging, otherwise any excluded file in the given profile would still get included in the released package
 - mvn -P 'swt-unix,release' clean package
+# Move the resulting package, otherwise it gets wiped out at the next clean
+- mv target/pdf-p-0.0.1-SNAPSHOT-distr-linux.zip .
 - mvn -P '!swt-unix,swt-windows,release' -Dmaven.test.skip=true clean package
 
 deploy:
