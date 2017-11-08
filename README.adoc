@@ -11,15 +11,15 @@ This program permits to edit the following information in a PDF:
 * outline
 * crop box
 
-The logical page number and outline are visible in most PDF viewers (example https://screenshots.debian.net/package/evince[here]) and make navigation handy. The crop box is useful to resize the page, for example to get rid of white space. (Very useful for e-reader devices with limited screen space.)
+The logical page number and outline are visible in most PDF viewers (example https://screenshots.debian.net/screenshots/000/015/840/large.png[here]) and make navigation handy. The crop box is useful to resize the page, for example to get rid of white space. (Very useful for e-reader devices with limited screen space.)
 
 Please note the following disclaimers.
 
 * A PDF may contain complex outline information. This program is only able to manage simple outline information: outline entries which link to a given page. When editing your PDFs with this program, only the simple outline information is saved, thus possibly resulting in loss of information for some PDFs.
-* Cropping your PDF does not remove any information, it simply hides it. It is not suitable for hiding sensitive information or for reducing the file size. (The good point about this strategy is that it is easy to undo, even if your original PDF has been lost: just change the crop box again.)
+* Cropping your PDF does not remove any information, it simply hides it. It is not suitable for removing confidential information or for reducing the file size. (The good point about this strategy is that it is easy to undo, even if your original PDF has been lost: just change the crop box again.)
 
 == Install and run
-You need a recent JRE to run the software (Java 8 at least). See http://www.oracle.com/technetwork/java/javase/downloads/index.html[here] (or check with your package manager on your system). My advice: make sure you have only _one_ recent JRE installed on your system and _no_ JDK (unless you are a Java developer). (Issues generally come from conflicting informations stored on the system. If you have several, delete them all and install only one JRE.)
+You need a recent JRE to run the software (Java SE 8 or higher). See http://www.oracle.com/technetwork/java/javase/downloads/index.html[here] (or check with your package manager on your system). My advice: make sure you have only _one_ recent JRE installed on your system and _no_ JDK (unless you are a Java developer). (Issues generally come from conflicting information stored in the system. If you have several JREs or JDKs, delete them all and install only one JRE.)
 
 To “install” (no proper installation is actually needed) and run this software:
 
