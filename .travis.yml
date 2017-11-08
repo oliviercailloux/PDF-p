@@ -14,8 +14,9 @@ cache:
   - "$HOME/.m2"
 
 before_deploy:
-- mvn -P 'swt-unix,release' package
-- mvn -P '!swt-unix,swt-windows,release' -Dmaven.test.skip=true package
+# Important to clean before packaging, otherwise any excluded file in the given profile would still get included in the released package
+- mvn -P 'swt-unix,release' clean package
+- mvn -P '!swt-unix,swt-windows,release' -Dmaven.test.skip=true clean package
 
 deploy:
   provider: releases
