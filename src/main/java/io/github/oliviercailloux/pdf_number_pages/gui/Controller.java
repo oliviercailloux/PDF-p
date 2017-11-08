@@ -6,10 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 
-import org.apache.pdfbox.pdmodel.common.PDPageLabelRange;
-import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageFitWidthDestination;
-import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
-import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.ShellAdapter;
@@ -27,7 +23,6 @@ import io.github.oliviercailloux.pdf_number_pages.gui.label_ranges_component.Lab
 import io.github.oliviercailloux.pdf_number_pages.gui.outline_component.OutlineComponent;
 import io.github.oliviercailloux.pdf_number_pages.model.LabelRangesByIndex;
 import io.github.oliviercailloux.pdf_number_pages.model.Outline;
-import io.github.oliviercailloux.pdf_number_pages.model.PDPageLabelRangeWithEquals;
 import io.github.oliviercailloux.pdf_number_pages.model.PdfPart;
 import io.github.oliviercailloux.pdf_number_pages.services.Reader;
 import io.github.oliviercailloux.pdf_number_pages.services.StatusComputer;
