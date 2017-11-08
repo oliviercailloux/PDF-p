@@ -2,7 +2,7 @@ language: java
 git:
   depth: 1
 jdk:
-- oraclejdk8
+- openjdk8
 dist: trusty
 env:
   global:
