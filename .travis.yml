@@ -27,8 +27,9 @@ deploy:
   provider: releases
   api_key:
     secure: IqjJhlSdj1QmNSEi2D3dze1mKYgaR0XlZjDN2QZP29y8OzVmbuu8u2STlxhfa2RhXFqWWe16HpyG4SIW93ws9b9MGIf464wMb4Tcs4MpeS9DT+dZU2TQBSYgW4QpsXXkihyP739QvRzkWboB6C1PxnvQ8jWl8FYPnccHSznw0YD1ZpQtY1q+Uio7A7boIvmOypuc6UeZDussv0AabM/tjS+D/Tvsrg8550TTE4M0KseSaTK5nakwjKK6B7uiq03peFw6Zarfo8cIN3fRvkDKgtvoZmCj4ZScvac3EY9WOs3HNo/2qaweEcYWfwrFAbedehCalG+orHEWta8ZB1lcIko3k1CeCCXKbp+3LMO1bX5zVjjEjCcQhfSbnKcnGjlFLWyDZwWXu2JUegnLbuT+ildNjX0WKyAiFrCa6y3Fv6K0Nuf/9Vcuj08042sqBGVlbZLsxyjald/ZlSuPuhhEJwlLpGmSjbdJMMVIL2Yi+tqUjhHNCLOghz9M5iga2/Y/7etF8zFpQ/CHg7wv9ErcxeJZCFmpwKYW77Oh3KWGI7FxNNA0sEdGchPegNtdD3//1w1kh0LRZqZ71jFGQ9FeV6biX8QyDrLa4+vKyWWEGZyC+dlBflbrmddSO97NpodGJ+Ykw9XknD1iqSHMhqsMUkJmKYmxLra4MsCrz4PRp7A=
-  file: pdf-p-${PRJ_VERSION}-distr-linux.zip
-  file: pdf-p-${PRJ_VERSION}-distr-windows.zip
+  file:
+    - pdf-p-${PRJ_VERSION}-distr-linux.zip
+    - pdf-p-${PRJ_VERSION}-distr-windows.zip
   on:
     tags: true
   skip_cleanup: true
