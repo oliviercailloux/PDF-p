@@ -22,6 +22,8 @@ before_deploy:
 - mv target/pdf-p-${PRJ_VERSION}-distr-linux.zip .
 - mvn -P '!swt-unix,swt-windows,release' -Dmaven.test.skip=true clean package
 - mv target/pdf-p-${PRJ_VERSION}-distr-windows.zip .
+- mvn -P '!swt-unix,swt-mac,release' -Dmaven.test.skip=true clean package
+- mv target/pdf-p-${PRJ_VERSION}-distr-mac.zip .
 
 deploy:
   provider: releases
@@ -30,6 +32,7 @@ deploy:
   file:
     - pdf-p-${PRJ_VERSION}-distr-linux.zip
     - pdf-p-${PRJ_VERSION}-distr-windows.zip
+    - pdf-p-${PRJ_VERSION}-distr-mac.zip
   on:
     tags: true
   skip_cleanup: true
