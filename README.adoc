@@ -39,7 +39,7 @@ I have tested the software in Linux only.
 
 Please report any issues on this web site.
 
-== Techical documentation
+== Technical documentation
 === Log
 In case of problems: here is how to change the log verbosity. (See also Logback https://logback.qos.ch/manual/configuration.html[manual].)
 
