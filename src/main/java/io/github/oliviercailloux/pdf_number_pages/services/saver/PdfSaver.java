@@ -1,5 +1,6 @@
 package io.github.oliviercailloux.pdf_number_pages.services.saver;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -60,6 +61,7 @@ public class PdfSaver {
 			errorMessage = "File not found";
 			succeeded = false;
 		} else {
+			LOGGER.debug("Reading.");
 			try (PDDocument document = PDDocument.load(inputPath.toFile())) {
 				if (cropBoxOpt.isPresent()) {
 					final BBox cropBox = cropBoxOpt.get();
@@ -88,9 +90,12 @@ public class PdfSaver {
 				if (outputPath.equals(empty)) {
 					LOGGER.info("Output path is empty.");
 				}
-				try (OutputStream outStr = Files.newOutputStream(outputPath, openOptions)) {
+				LOGGER.debug("Buffering.");
+				try (OutputStream outStr = new BufferedOutputStream(Files.newOutputStream(outputPath, openOptions))) {
+					LOGGER.info("Saving.");
 					document.save(outStr);
 				}
+				LOGGER.debug("Succeeding.");
 				errorMessage = "";
 				succeeded = true;
 			} catch (ClosedByInterruptException e) {
@@ -100,6 +105,12 @@ public class PdfSaver {
 				errorMessage = "Already exists: " + e.getMessage();
 				LOGGER.debug("Writing.", e);
 			} catch (IOException e) {
+				/**
+				 * I receive systematically java.nio.channels.ClosedChannelException when a save
+				 * job is interrupted and replaced by another save job. This is because the read
+				 * from PDF load is not interrupted, this thread does not exit and it attempts
+				 * to save irrespective of the previous interruption.
+				 */
 				errorMessage = e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
 				LOGGER.error("Writing.", e);
 				succeeded = false;
