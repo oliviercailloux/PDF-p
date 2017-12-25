@@ -19,7 +19,7 @@ Please note the following disclaimers.
 * Cropping your PDF does not remove any information, it simply hides it. It is not suitable for removing confidential information or for reducing the file size. (The good point about this strategy is that it is easy to undo, even if your original PDF has been lost: just change the crop box again.)
 
 == Install and run
-You need a recent JRE to run the software (Java SE 8 or higher). See http://www.oracle.com/technetwork/java/javase/downloads/index.html[here] (or check with your package manager on your system). My advice: make sure you have only _one_ recent JRE installed on your system and _no_ JDK (unless you are a Java developer). (Issues generally come from conflicting information stored in the system. If you have several JREs or JDKs, delete them all and install only one JRE.)
+You need a recent JRE to run the software (Java SE 8 or higher). See http://www.oracle.com/technetwork/java/javase/downloads/index.html[here] (or check with your package manager on your system). My advice: make sure you have only _one_ recent JRE installed on your system and _no_ JDK (unless you are a Java developer). (Issues generally come from conflicting information stored in the system. If you have several JREs or JDKs, uninstall them all and install only one JRE.)
 
 To “install” (no proper installation is actually needed) and run this software:
 
