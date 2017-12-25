@@ -39,6 +39,10 @@ import io.github.oliviercailloux.pdf_number_pages.services.saver.Saver;
  * l2controller fires the events. It is better able to decide when to fire
  * exactly (e.g. clear all labels and all outline and then fire).
  *
+ * Start position strategy. Evolution, Libre office Writer : remembers size and
+ * position. GEdit : remembers size but not pos (starts close to upper left
+ * corner).
+ *
  * @author Olivier Cailloux
  *
  */
