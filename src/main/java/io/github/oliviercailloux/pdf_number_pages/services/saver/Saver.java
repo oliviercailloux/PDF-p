@@ -118,6 +118,7 @@ public class Saver {
 		checkState(!pdf.getLabelRangesByIndex().isEmpty());
 		assert (submittedJob == null) == (submittedJobCallback == null);
 		if (submittedJob != null) {
+			LOGGER.debug("Cancelling.");
 			submittedJobCallback.cancel();
 			submittedJob.cancel(true);
 		}

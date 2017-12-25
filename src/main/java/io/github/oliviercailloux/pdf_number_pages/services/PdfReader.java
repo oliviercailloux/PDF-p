@@ -102,7 +102,9 @@ public class PdfReader {
 			succeeded = false;
 			ranges = new LabelRangesByIndex();
 		} else {
+			LOGGER.debug("Start loading.");
 			try (PDDocument document = PDDocument.load(inputFile)) {
+				LOGGER.debug("Loaded.");
 				current = document;
 				assert !document.isEncrypted();
 				final PDDocumentCatalog catalog = document.getDocumentCatalog();
