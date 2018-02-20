@@ -215,7 +215,7 @@ public class Controller {
 		 * avoiding a refresh that would be visible by the end-user.
 		 */
 		reader.setInputPath(Paths.get(
-				"/home/olivier/Biblio/Roman - Advanced Linear Algebra, Third edition (2008) - From Springer, with structure.pdf"));
+				"/home/olivier/Biblio/Fishburn - Utility Theory for Decision Making (1970) - With manual TOC.pdf"));
 		if (!pdf.getLabelRangesByIndex().isEmpty()) {
 			LOGGER.debug("Setting auto save.");
 			saver.setOverwrite(true);
