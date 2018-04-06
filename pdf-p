@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+java -cp target/classes/:target/dependency/* io.github.oliviercailloux.pdf_number_pages.gui.Controller
+
