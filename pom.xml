@@ -78,6 +78,20 @@
 				<swt.artifactId>org.eclipse.swt.gtk.linux.x86_64</swt.artifactId>
 				<env>linux</env>
 			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>org.eclipse.platform</groupId>
+					<artifactId>${swt.artifactId}</artifactId>
+					<version>3.106.3</version>
+					<optional>true</optional>
+					<exclusions>
+						<exclusion>
+							<groupId>org.eclipse.platform</groupId>
+							<artifactId>org.eclipse.swt</artifactId>
+						</exclusion>
+					</exclusions>
+				</dependency>
+			</dependencies>
 		</profile>
 		<profile>
 			<id>swt-mac</id>
@@ -90,6 +104,20 @@
 				<swt.artifactId>org.eclipse.swt.cocoa.macosx.x86_64</swt.artifactId>
 				<env>mac</env>
 			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>org.eclipse.platform</groupId>
+					<artifactId>${swt.artifactId}</artifactId>
+					<version>3.106.3</version>
+					<optional>true</optional>
+					<exclusions>
+						<exclusion>
+							<groupId>org.eclipse.platform</groupId>
+							<artifactId>org.eclipse.swt</artifactId>
+						</exclusion>
+					</exclusions>
+				</dependency>
+			</dependencies>
 		</profile>
 		<profile>
 			<id>swt-windows</id>
@@ -102,6 +130,20 @@
 				<swt.artifactId>org.eclipse.swt.win32.win32.x86_64</swt.artifactId>
 				<env>windows</env>
 			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>org.eclipse.platform</groupId>
+					<artifactId>${swt.artifactId}</artifactId>
+					<version>3.106.3</version>
+					<optional>true</optional>
+					<exclusions>
+						<exclusion>
+							<groupId>org.eclipse.platform</groupId>
+							<artifactId>org.eclipse.swt</artifactId>
+						</exclusion>
+					</exclusions>
+				</dependency>
+			</dependencies>
 		</profile>
 	</profiles>
 
@@ -149,18 +191,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<dependency>
-			<groupId>org.eclipse.platform</groupId>
-			<artifactId>${swt.artifactId}</artifactId>
-			<version>3.106.3</version>
-			<optional>true</optional>
-			<exclusions>
-				<exclusion>
-					<groupId>org.eclipse.platform</groupId>
-					<artifactId>org.eclipse.swt</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+
 
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
