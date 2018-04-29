@@ -130,18 +130,36 @@
 		<dependency>
 			<groupId>org.eclipse.platform</groupId>
 			<artifactId>org.eclipse.jface</artifactId>
-			<version>3.12.2</version>
+			<version>3.13.2</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.eclipse.platform</groupId>
+					<artifactId>org.eclipse.swt</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>io.github.oliviercailloux</groupId>
 			<artifactId>swt-tools</artifactId>
 			<version>0.0.5</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.eclipse.platform</groupId>
+					<artifactId>org.eclipse.swt</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.platform</groupId>
 			<artifactId>${swt.artifactId}</artifactId>
-			<version>3.105.3</version>
+			<version>3.106.3</version>
 			<optional>true</optional>
+			<exclusions>
+				<exclusion>
+					<groupId>org.eclipse.platform</groupId>
+					<artifactId>org.eclipse.swt</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -170,18 +188,13 @@
 		<dependencies>
 			<dependency>
 				<groupId>org.eclipse.platform</groupId>
-				<artifactId>org.eclipse.swt</artifactId>
-				<version>3.105.3</version>
-			</dependency>
-			<dependency>
-				<groupId>org.eclipse.platform</groupId>
 				<artifactId>org.eclipse.core.commands</artifactId>
-				<version>3.8.1</version>
+				<version>3.9.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.eclipse.platform</groupId>
 				<artifactId>org.eclipse.equinox.common</artifactId>
-				<version>3.8.0</version>
+				<version>3.9.0</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
